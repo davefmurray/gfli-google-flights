@@ -27,18 +27,21 @@ The earlier baseline already incorporated #230, #231, and #232.
 
 ## Remaining Before A Release Decision
 
-The remaining work is roughly one batch: release hardening.
-Provider-blocked features and TypeScript parity are not
-automatically part of the first release.
+The four planned local implementation batches are complete. This is not a release
+approval: repository visibility, remote CI/container verification, and registry
+setup remain explicit gates. Provider-blocked features and TypeScript parity are
+not automatically part of the first release.
 
 - Explore (#226) remains deferred after the blocked live evaluation below.
 - Unsupported baggage/emissions/basic-economy options still warn rather than enforce.
 - Multi-city, booking-price RPC, and reseller lookup remain provider limitations.
 - TypeScript public-page search transport is not ported; npm publishing stays disabled.
-- ICAO input, Homebrew distribution, and container verification are outstanding.
-- Review the remaining dependency/security surface before deployment; one patched
-  dependency is not a complete security audit. HTTP still requires an authenticated
-  gateway before public exposure.
+- ICAO input and Homebrew distribution are deferred feature/distribution work.
+- Container execution remains unverified locally because Docker is unavailable.
+  CI now requires its build, health, and non-root checks before publishing.
+- Dependency advisory review is complete for the current lock, not a comprehensive
+  security audit. Re-run the audit before release. HTTP still requires an
+  authenticated gateway and abuse controls before public exposure.
 
 ## Completed In The Second Batch
 
@@ -102,7 +105,49 @@ subject to the shared client's retries. Output contains sanitized status/categor
 only. Nonzero exit means every variant failed. Even parseable payloads would still
 require destination decoding and end-to-end verification before integrating Explore.
 
+## Completed In The Fourth Batch
+
+- **Dependency review:** replaced affected runtime and development packages.
+  Initial audits reported 51 advisory matches in 13 runtime packages and 30 in
+  five additional development packages, including duplicate advisory records.
+  The complete updated export passes pip-audit on 3.10/3.13 with no ignored IDs.
+  See SECURITY.md for scope and limits; this is not proof of exploitability or
+  complete security coverage.
+- **Supported versions:** Python 3.10-3.13, now including a local 3.12 test run.
+  Restrict unverified 3.14+ rather than allow its older MCP dependency fallback.
+  Raise applicable direct dependency floors and keep FastMCP within tested majors
+  3/4. Locked tests use 3.2.0; fresh installs resolve 4.0.3.
+- **Runtime safeguards:** reject non-finite timeouts; create diagnostic logs with
+  owner-only permissions; retain the original CLI/JSON error if logging fails.
+- **Install gates:** `make verify-install` builds and checks wheel/sdist, checks
+  license/NOTICE inclusion, installs into disposable environments outside the
+  checkout, and exercises core CLI plus stdio/localhost HTTP MCP. No Google calls
+  or changes to global installs are made by this target.
+- **Release gates:** SHA-pinned actions, non-persisted checkout credentials,
+  bounded job timeouts, advisory checks, fresh-install checks, and container CI.
+  Publishing remains manual and additionally checks owned repository, GLFI tag,
+  version/lock agreement, verification jobs, and protected PyPI environment.
+  Corrected Dependabot ownership. Environment protection/trusted publishing still
+  need account-side setup; no remote workflows have run yet.
+- **Container configuration:** non-editable install, non-root runtime, health
+  probe, read-only Compose root filesystem, dropped capabilities, no-new-privileges,
+  loopback-only published port, and excluded secret-file patterns. Runtime remains
+  unverified on this host; public container distribution also needs an OS-image scan.
+
 ## Verification
+
+Fourth-batch checks on 2026-09-05: all 971 offline Python tests passed on 3.10,
+3.11, 3.12, and 3.13. The 322 TypeScript tests, lint/typecheck, and build passed;
+its live transport is still not ported. Ruff and actionlint passed. Updated
+runtime/dev dependency audits passed on Python 3.10/3.13. Fresh core wheel, MCP
+wheel, and MCP sdist installs passed, including stdio and HTTP; a separate sdist
+MCP check passed on 3.12. Live JAX-JFK for 2026-10-15 with two adults and one child
+returned ten flights using the updated development lock. Docker is unavailable;
+container/remote CI checks remain pending, not marked passed.
+The rebuilt installed wheel also returned ten flights, passed stdio/HTTP checks,
+and had no known advisories in its 81 registry dependencies (the unpublished GLFI
+package itself is not in the advisory database). Original `fli` is untouched.
+No servers were left running, and nothing was pushed or published.
 
 Third-batch checks on 2026-09-05: all 951 offline Python tests passed on 3.10,
 3.11, and 3.13 with the Makefile's terminal environment. Ruff lint/formatting,

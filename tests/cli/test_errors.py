@@ -44,6 +44,46 @@ def test_write_log_creates_file_with_traceback(tmp_path):
     assert "traceback:" in contents
 
 
+def test_log_file_is_private():
+    import os
+
+    path = _write_log(SearchTimeoutError("slow"))
+    if os.name != "nt":
+        assert path.stat().st_mode & 0o777 == 0o600
+
+
+def test_unwritable_logs_preserve_error(monkeypatch, tmp_path, capsys):
+    blocked = tmp_path / "not-a-directory"
+    blocked.write_text("existing")
+    monkeypatch.setattr("fli.cli.errors._LOG_DIR", blocked)
+    message, category, path = json_error_payload(SearchTimeoutError("original error"))
+    assert (message, category, path) == ("original error", "timeout", None)
+    assert report_cli_error(SearchTimeoutError("original error")).exit_code == 1
+    assert "Could not write" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("command", ["flights", "dates"])
+def test_json_error_survives_unwritable_log(command, runner, monkeypatch, tmp_path):
+    import json
+
+    def search(*args, **kwargs):
+        raise SearchTimeoutError("original error")
+
+    monkeypatch.setattr("fli.search.SearchFlights.search", search)
+    monkeypatch.setattr("fli.search.SearchDates.search", search)
+    blocked = tmp_path / "not-a-directory"
+    blocked.write_text("existing")
+    monkeypatch.setattr("fli.cli.errors._LOG_DIR", blocked)
+    date_args = (
+        ["2026-12-26"] if command == "flights" else ["--from", "2026-12-26", "--to", "2026-12-26"]
+    )
+    result = runner.invoke(app, [command, "JFK", "LHR", *date_args, "--format", "json"])
+    assert result.exit_code == 1
+    error = json.loads(result.output)["error"]
+    assert error["type"] == "timeout"
+    assert error["log_path"] is None
+
+
 @pytest.mark.parametrize(
     "exc, expected_type",
     [

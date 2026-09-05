@@ -11,6 +11,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: glfi-publish-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   verify:
     uses: ./.github/workflows/ci.yml
@@ -18,41 +22,40 @@ jobs:
   build:
     needs: verify
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+        with:
+          version: '0.11.28'
           python-version: '3.12'
       - name: Require matching GLFI release tag for publishing
         if: inputs.publish
-        run: |
-          uv run --no-project python - <<'PY'
-          import os
-          import tomllib
-          from pathlib import Path
-          version = tomllib.loads(Path('pyproject.toml').read_text())['project']['version']
-          expected = f'refs/tags/glfi-v{version}'
-          if os.environ['GITHUB_REF'] != expected:
-              raise SystemExit(f'Publish must run on {expected}')
-          PY
+        run: uv run --no-project python scripts/check_release.py --ref "$GITHUB_REF"
       - run: uv build
-      - uses: actions/upload-artifact@v4
+      - run: uv run --frozen --extra dev twine check dist/*
+      - run: uv run --frozen python scripts/verify_install.py dist/glfi-*.whl --mcp
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: python-dist
           path: dist/
+          if-no-files-found: error
 
   publish:
-    if: inputs.publish
+    if: inputs.publish && github.repository == 'davefmurray/glfi'
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     environment:
       name: pypi
       url: https://pypi.org/project/glfi/
     permissions:
       id-token: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: python-dist
           path: dist/
-      - uses: pypa/gh-action-pypi-publish@release/v1
+      - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # release/v1

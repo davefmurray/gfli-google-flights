@@ -8,7 +8,8 @@ npm, Homebrew, or container-registry release has been published yet.
 
 ## Install From Source
 
-Requires Python 3.10+ and [uv](https://docs.astral.sh/uv/).
+Requires Python 3.10-3.13 and [uv](https://docs.astral.sh/uv/).
+The pre-release package rejects Python 3.14+ until its dependency set is verified.
 
 The GitHub installation below becomes available once the independent repository
 is published. Until then, run `uv tool install '.[mcp]'` from your local checkout.
@@ -41,6 +42,12 @@ Use future dates. Searches support one-way and round-trip itineraries, cabin,
 airline, airport, and stop filters. Run `glfi flights --help` for exact options.
 No Google API key is required. Availability and prices must be confirmed on
 the airline or booking site before purchasing.
+
+`GLFI_TIMEOUT` sets a positive, finite per-request timeout in seconds (default 60).
+Retries and multi-request searches can take longer than that individual timeout.
+CLI error logs are created owner-only under `~/.glfi/logs`; they contain command
+arguments and traceback details. Review them before sharing. A log-write failure
+does not suppress the original error; JSON then reports `log_path: null`.
 
 `flights` and `dates` accept `--passengers` (aliases `--adults`, `-p`),
 `--children`, `--infants-in-seat`, and `--infants-on-lap`. MCP flight/date/booking
@@ -127,6 +134,10 @@ it directly to the public internet. Docker Compose publishes to loopback only:
 docker compose up --build
 ```
 
+Compose uses a read-only filesystem, dropped capabilities, a small temporary
+filesystem, and a non-root process. Container execution is a required CI gate;
+it has not been verified on the local development host, which has no Docker runtime.
+
 ## Current Limits
 
 - Google Flights is an unofficial, reverse-engineered data source, not a stable API.
@@ -152,6 +163,8 @@ docker compose up --build
 uv sync --all-extras
 make lint
 make test-offline
+make audit
+make verify-install
 uv run glfi --help
 uv build
 ```
@@ -163,4 +176,5 @@ Historical API documentation under `docs/` may retain upstream names or describe
 capabilities that are currently unavailable. This README is the supported setup guide.
 
 See [RELEASING.md](RELEASING.md) for release gates and [NOTICE](NOTICE) for attribution.
+See [SECURITY.md](SECURITY.md) for the security review scope and deployment limits.
 See [PRELAUNCH.md](PRELAUNCH.md) for completed fixes and the remaining backlog.

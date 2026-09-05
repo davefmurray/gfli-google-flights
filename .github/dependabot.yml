@@ -8,7 +8,7 @@ updates:
       day: "monday"
     open-pull-requests-limit: 10
     reviewers:
-      - "punitarani"
+      - "davefmurray"
     commit-message:
       prefix: "deps"
       include: "scope"
@@ -36,7 +36,7 @@ updates:
       day: "monday"
     open-pull-requests-limit: 5
     reviewers:
-      - "punitarani"
+      - "davefmurray"
     commit-message:
       prefix: "ci"
       include: "scope"
@@ -49,7 +49,7 @@ updates:
       day: "monday"
     open-pull-requests-limit: 5
     reviewers:
-      - "punitarani"
+      - "davefmurray"
     commit-message:
       prefix: "deps"
       include: "scope"

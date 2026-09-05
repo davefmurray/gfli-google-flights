@@ -13,14 +13,18 @@ permissions:
 jobs:
   python:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
         python: ['3.10', '3.11', '3.12', '3.13']
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+        with:
+          version: '0.11.28'
           python-version: ${{ matrix.python }}
           enable-cache: true
       - run: uv sync --frozen --all-extras
@@ -29,15 +33,59 @@ jobs:
       - run: make test-offline
       - run: uv build
       - run: uv run --frozen twine check dist/*
+      - run: uv run --frozen python scripts/check_release.py
+      - run: uv run --frozen python scripts/verify_install.py dist/glfi-*.whl
+      - run: uv run --frozen python scripts/verify_install.py dist/glfi-*.whl --mcp
+      - if: matrix.python == '3.12'
+        run: uv run --frozen python scripts/verify_install.py dist/glfi-*.tar.gz --mcp
+
+  security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      matrix:
+        python: ['3.10', '3.13']
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+        with:
+          version: '0.11.28'
+          python-version: ${{ matrix.python }}
+      - run: uv export --frozen --all-extras --no-emit-project --output-file requirements-audit.txt
+      - run: uvx --python '${{ matrix.python }}' pip-audit==2.10.1 --require-hashes --disable-pip -r requirements-audit.txt
+
+  container:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - run: docker compose config --quiet
+      - run: docker compose up --build --wait --wait-timeout 120
+      - run: docker compose exec -T glfi-mcp glfi --version
+      - name: Require non-root runtime
+        run: docker compose exec -T glfi-mcp python -c 'import os; assert os.geteuid() != 0'
+      - name: Show container logs
+        if: failure()
+        run: docker compose logs
+      - name: Stop container
+        if: always()
+        run: docker compose down --volumes
 
   typescript:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: fli-js
     steps:
-      - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
       - run: bun install --frozen-lockfile
       - run: bun run ci
       - run: bun run build

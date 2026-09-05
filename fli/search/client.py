@@ -20,6 +20,7 @@ callers cooperate cleanly under Google's 10 req/sec ceiling.
 
 from __future__ import annotations
 
+import math
 import os
 import threading
 from typing import TYPE_CHECKING, Any
@@ -67,7 +68,7 @@ if _env_timeout is not None:
     except ValueError:
         msg = f"GLFI_TIMEOUT must be a number of seconds, got: {_env_timeout!r}"
         raise ValueError(msg) from None
-    if REQUEST_TIMEOUT <= 0:
+    if not math.isfinite(REQUEST_TIMEOUT) or REQUEST_TIMEOUT <= 0:
         raise ValueError(f"GLFI_TIMEOUT must be a positive number, got: {_env_timeout!r}")
 else:
     REQUEST_TIMEOUT = DEFAULT_TIMEOUT

@@ -8,6 +8,7 @@ traceback for debugging.
 from __future__ import annotations
 
 import logging
+import os
 import sys
 import traceback
 from datetime import datetime, timezone
@@ -41,9 +42,8 @@ def _friendly_message(exc: BaseException) -> str:
     return f"Unexpected error: {exc.__class__.__name__}: {exc}"
 
 
-def _write_log(exc: BaseException, *, command: str | None = None) -> Path:
-    """Write the full traceback for ``exc`` to a log file and return the path."""
-    _LOG_DIR.mkdir(parents=True, exist_ok=True)
+def _write_log(exc: BaseException, *, command: str | None = None) -> Path | None:
+    """Write a private traceback, without hiding the original error on write failure."""
     # Microsecond precision so rapid-fire errors (e.g. tests, parallel
     # legs) don't collide on the same filename and silently overwrite.
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
@@ -60,7 +60,14 @@ def _write_log(exc: BaseException, *, command: str | None = None) -> Path:
     lines.append("traceback:")
     lines.append("".join(traceback.format_exception(type(exc), exc, exc.__traceback__)))
 
-    log_path.write_text("\n".join(lines), encoding="utf-8")
+    try:
+        _LOG_DIR.mkdir(parents=True, exist_ok=True, mode=0o700)
+        # Exclusive creation prevents following an existing file or symlink.
+        fd = os.open(log_path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        with os.fdopen(fd, "w", encoding="utf-8") as log:
+            log.write("\n".join(lines))
+    except OSError:
+        return None
     return log_path
 
 
@@ -80,7 +87,10 @@ def report_cli_error(
     message = _friendly_message(exc)
 
     console.print(f"[red]Error:[/red] {message}")
-    console.print(f"[dim]Full traceback written to {log_path}[/dim]")
+    if log_path is not None:
+        console.print(f"[dim]Full traceback written to {log_path}[/dim]")
+    else:
+        console.print("[dim]Could not write the diagnostic log.[/dim]")
 
     # Still log at debug for anyone who wired up python logging.
     _logger.debug("CLI error", exc_info=exc)
@@ -88,7 +98,9 @@ def report_cli_error(
     return typer.Exit(exit_code)
 
 
-def json_error_payload(exc: BaseException, *, command: str | None = None) -> tuple[str, str, Path]:
+def json_error_payload(
+    exc: BaseException, *, command: str | None = None
+) -> tuple[str, str, Path | None]:
     """Return ``(message, error_type, log_path)`` for JSON-mode error output."""
     log_path = _write_log(exc, command=command)
     if isinstance(exc, SearchClientError):

@@ -50,5 +50,9 @@ Dockerfile
 # Misc
 *.log
 .env
+.env.*
+*.pem
+*.key
+fli-js/
 examples/
 scripts/

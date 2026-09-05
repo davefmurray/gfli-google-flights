@@ -53,6 +53,20 @@ test-fuzz:
 test-all:
 	uv run --extra dev pytest -vv --all
 
+# Online advisory audit; separate from deterministic tests.
+audit:
+	uv export --quiet --frozen --all-extras --no-emit-project --output-file /tmp/glfi-audit-requirements.txt
+	uvx --python 3.10 pip-audit==2.10.1 --require-hashes --disable-pip -r /tmp/glfi-audit-requirements.txt
+	uvx --python 3.13 pip-audit==2.10.1 --require-hashes --disable-pip -r /tmp/glfi-audit-requirements.txt
+
+verify-install:
+	uv run --frozen python scripts/check_release.py
+	uv build
+	uv run --frozen twine check dist/glfi-*.whl dist/glfi-*.tar.gz
+	uv run --frozen python scripts/verify_install.py dist/glfi-*.whl
+	uv run --frozen python scripts/verify_install.py dist/glfi-*.whl --mcp
+	uv run --frozen python scripts/verify_install.py dist/glfi-*.tar.gz --mcp
+
 # Run CI locally using act (requires Docker and act: https://github.com/nektos/act)
 ci:
 	act -j lint -j test --workflows .github/workflows/test.yml
@@ -109,6 +123,8 @@ help:
 	@echo "  make lint        - Lint code using ruff"
 	@echo "  make lint-fix    - Lint and fix code using ruff"
 	@echo "  make test        - Run tests"
+	@echo "  make audit       - Audit locked runtime/dev dependencies (online)"
+	@echo "  make verify-install - Build and test disposable core/MCP installs"
 	@echo "  make test-mcp    - Run tests with MCP"
 	@echo "  make test-fuzz   - Run tests with fuzzing"
 	@echo "  make test-all    - Run all tests"
@@ -119,4 +135,4 @@ help:
 	@echo "  make bump-preview - Preview next version (patch/minor/major)"
 	@echo "  make release-notes - Preview release notes since last tag"
 # Declare the targets as phony
-.PHONY: help install install-dev install-all mcp mcp-http docs format lint lint-fix test test-offline test-mcp test-fuzz test-all ci ci-docker devcontainer requirements bump-preview release-notes
+.PHONY: help install install-dev install-all mcp mcp-http docs format lint lint-fix test test-offline test-mcp test-fuzz test-all audit verify-install ci ci-docker devcontainer requirements bump-preview release-notes
