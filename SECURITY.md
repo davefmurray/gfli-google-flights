@@ -46,7 +46,7 @@ of `uv.lock`; `make verify-install` separately exercises newly resolved installs
 
 ## Reporting
 
-Do not put secrets or exploit-sensitive data in public issues. Once the independent
-repository is created, enable GitHub private vulnerability reporting before launch.
-Until then, coordinate privately with the maintainer; no public reporting endpoint
-or response-time commitment is established yet.
+Do not put secrets or exploit-sensitive data in public issues. GitHub private
+vulnerability reporting is enabled for this repository: [report a vulnerability
+privately](https://github.com/davefmurray/glfi/security/advisories/new).
+No response-time commitment is established yet.

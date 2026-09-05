@@ -20,6 +20,11 @@ batch notes below are historical; their no-push statements describe that stage.
 - Push triggers CI only. PyPI publishing remains explicitly dispatched and
   separately gated; no package, container, or public HTTP service is released.
 - Current remote verification: [GitHub CI](https://github.com/davefmurray/glfi/actions/workflows/ci.yml).
+- The first remote run passed container execution but exposed a TypeScript test
+  cleanup issue: assigning an absent environment variable to `undefined` left
+  a literal string on the CI runtime. Tests now delete absent timeout/proxy
+  variables and restore the original environment. Production transport is unchanged.
+- GitHub private vulnerability reporting is enabled; see [SECURITY.md](SECURITY.md).
 
 ## Final Selected Feature Batch
 

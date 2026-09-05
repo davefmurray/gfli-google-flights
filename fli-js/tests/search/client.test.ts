@@ -27,12 +27,19 @@ function asFetch(fn: (input: unknown, init?: RequestInit) => Promise<Response>):
 
 describe("Client", () => {
   let originalEnv: typeof process.env.FLI_TIMEOUT;
+  let originalProxy: typeof process.env.HTTPS_PROXY;
 
   beforeEach(() => {
     originalEnv = process.env.FLI_TIMEOUT;
+    originalProxy = process.env.HTTPS_PROXY;
+    delete process.env.FLI_TIMEOUT;
+    delete process.env.HTTPS_PROXY;
   });
   afterEach(() => {
-    process.env.FLI_TIMEOUT = originalEnv;
+    if (originalEnv === undefined) delete process.env.FLI_TIMEOUT;
+    else process.env.FLI_TIMEOUT = originalEnv;
+    if (originalProxy === undefined) delete process.env.HTTPS_PROXY;
+    else process.env.HTTPS_PROXY = originalProxy;
   });
 
   test("POST with body sends the expected request", async () => {
@@ -227,7 +234,7 @@ describe("Client", () => {
       await c.post("https://example.com", { body: "" });
       expect(captured.init?.proxy).toBe("http://proxy.example.com:8080");
     } finally {
-      if (previous == null) process.env.HTTPS_PROXY = undefined;
+      if (previous == null) delete process.env.HTTPS_PROXY;
       else process.env.HTTPS_PROXY = previous;
     }
   });
@@ -247,7 +254,7 @@ describe("Client", () => {
       await c.post("https://example.com", { body: "" });
       expect(captured.init?.proxy).toBe("http://right.example.com");
     } finally {
-      process.env.HTTPS_PROXY = undefined;
+      delete process.env.HTTPS_PROXY;
     }
   });
 
