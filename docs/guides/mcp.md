@@ -86,6 +86,9 @@ Search for flights between two airports on a specific date.
 | `country` | string | No | null | ISO 3166-1 alpha-2 code (`gl=`) — e.g. 'GB' |
 | `sort_by` | string | No | CHEAPEST | CHEAPEST, DURATION, DEPARTURE_TIME, or ARRIVAL_TIME |
 | `passengers` | int | No | 1 | Number of adult passengers |
+| `children` | int | No | 0 | Number of child passengers |
+| `infants_in_seat` | int | No | 0 | Number of infants traveling in their own seat |
+| `infants_on_lap` | int | No | 0 | Number of lap infants |
 
 **Example Response:**
 
@@ -151,6 +154,9 @@ Find the cheapest travel dates between two airports within a date range.
 | `country` | string | No | null | ISO 3166-1 alpha-2 country (`gl=`) |
 | `sort_by_price` | bool | No | false | Sort results by price (lowest first) |
 | `passengers` | int | No | 1 | Number of adult passengers |
+| `children` | int | No | 0 | Number of child passengers |
+| `infants_in_seat` | int | No | 0 | Number of infants traveling in their own seat |
+| `infants_on_lap` | int | No | 0 | Number of lap infants |
 
 **Example Response:**
 
