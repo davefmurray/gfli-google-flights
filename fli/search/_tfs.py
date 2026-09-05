@@ -202,6 +202,8 @@ def apply_client_side_filters(flights: list[Any], filters: Any) -> list[Any]:
     list, so a filtered search returns fewer options here than the old RPC
     did — but every option it does return honours the filter.
     """
+    from fli.search.starlink import annotate_and_match
+
     airlines = {_iata(a) for a in (getattr(filters, "airlines", None) or [])}
     excluded = {_iata(a) for a in (getattr(filters, "airlines_exclude", None) or [])}
     max_duration = getattr(filters, "max_duration", None)
@@ -227,6 +229,8 @@ def apply_client_side_filters(flights: list[Any], filters: Any) -> list[Any]:
 
     out = []
     for flight in flights:
+        if not annotate_and_match(flight, getattr(filters, "starlink", "any")):
+            continue
         carriers = {_iata(leg.airline) for leg in flight.legs}
         if airlines and not carriers & airlines:
             continue

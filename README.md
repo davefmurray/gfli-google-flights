@@ -97,6 +97,46 @@ Same-day validation uses a conservative `UTC today - 1 day` allowance because
 the dataset lacks airport time zones. This avoids rejecting evening departures
 west of UTC but can also permit a date that is already past locally.
 
+## Starlink Finder
+
+```sh
+glfi JAX IAD 2026-10-15 --starlink possible
+glfi DOH LHR 2026-10-15 --return 2026-10-19 --starlink likely
+glfi dates DOH LHR --from 2026-10-15 --to 2026-10-16 --round --duration 4 --starlink likely
+glfi starlink
+glfi starlink --json
+```
+
+- `likely`: airline-reported completed fleet/subfleet installation, matched to
+  the flight's operator and aircraft. This is an estimate, not flight confirmation.
+- `possible`: includes likely results plus documented partial rollouts.
+- `any`: default; no Starlink filtering. Results still carry available assessments.
+
+Every leg must qualify, including connections and both directions. Operating
+airlines take precedence over marketing codes; United Express rules additionally
+require a United marketing code. Free Wi-Fi does **not** prove Starlink. Unknown
+aircraft, unreviewed operators, contradictory no-Wi-Fi reports, and stale evidence
+are not promoted to positive matches. Unknown does not mean "no Starlink."
+
+Initial reviewed coverage: Hawaiian passenger A330/A321neo, Qatar A350/777/787
+subfleets, and selected United/United Express aircraft. Other operators are unknown,
+not a claim that they lack Starlink. Each JSON/MCP flight leg includes `starlink`
+with status, reason, airline-owned source URL, review dates, and an explicit caveat.
+Use `glfi starlink` to inspect the exact aircraft scopes. See [STARLINK.md](STARLINK.md).
+
+The current evidence was reviewed on **2026-09-05**, with a **2026-12-04** review
+deadline and travel horizon. Beyond that window, filtering raises an explicit
+unsupported-search error until evidence is re-reviewed. Normal `--starlink any`
+searches continue and mark stale inferences unknown. No automatic web scraping,
+tail-number lookup, numeric probabilities, or per-flight confirmation is claimed.
+
+MCP `search_flights`, `search_dates`, and `get_booking_options` accept the same
+`starlink` values. Round-trip date filtering expands actual return candidates even
+without return-time restrictions, so it costs more requests; start with a short
+date range. Date results are matching fare/date pairs; run a flight search for
+per-leg evidence. Google booking/search links do not preserve this GLFI-only filter.
+Aircraft swaps, outages, route restrictions, and access requirements still apply.
+
 ## MCP
 
 Install with the `[mcp]` extra. The same package supplies the CLI and both MCP transports.

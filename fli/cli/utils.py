@@ -197,6 +197,8 @@ def serialize_flight_leg(leg: Any) -> dict[str, Any]:
     }
     if getattr(leg, "aircraft", None):
         payload["aircraft"] = leg.aircraft
+    if getattr(leg, "starlink", None) is not None:
+        payload["starlink"] = leg.starlink.model_dump(mode="json", exclude_none=True)
     if getattr(leg, "legroom", None):
         payload["legroom"] = leg.legroom
     if getattr(leg, "overnight", False):
@@ -443,6 +445,14 @@ def display_flight_results(
         table.add_row("Total Duration", format_duration(total_duration))
         total_stops = sum(flight.stops for flight in flight_segments)
         table.add_row("Total Stops", str(total_stops))
+        from fli.search.starlink import itinerary_status
+
+        legs = [leg for segment in flight_segments for leg in segment.legs]
+        if any(leg.starlink is not None for leg in legs):
+            table.add_row("Starlink", f"{itinerary_status(legs)} (fleet estimate, not confirmed)")
+            for leg in legs:
+                if leg.starlink is not None and leg.starlink.status != "unknown":
+                    table.add_row(f"{leg.airline.name}{leg.flight_number}", leg.starlink.reason)
 
         # Self-transfer / mixed-cabin warnings
         if price_segment.self_transfer:

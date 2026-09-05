@@ -148,6 +148,9 @@ class SearchFlights:
         if top_n is not None and (type(top_n) is not int or top_n < 1):
             raise ValueError("top_n must be a positive integer or None for all candidates")
         self._last_session_id = None
+        from fli.search.starlink import validate_starlink_filter
+
+        validate_starlink_filter(filters)
         flights = self._fetch_flights(
             filters,
             currency=currency,

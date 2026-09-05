@@ -8,7 +8,7 @@ travel dates.
 import json
 import os
 from datetime import datetime, timedelta, timezone
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
 from fastmcp import FastMCP
 from mcp.types import Icon
@@ -104,6 +104,7 @@ mcp = FastMCP(
 class FlightSearchParams(BaseModel):
     """Parameters for searching flights on a specific date."""
 
+    starlink: Literal["any", "likely", "possible"] = "any"
     origin: str = Field(
         description="Departure airport IATA code(s), comma-separated for multiple (e.g., 'JFK,LGA')"
     )
@@ -197,6 +198,7 @@ class FlightSearchParams(BaseModel):
 class DateSearchParams(BaseModel):
     """Parameters for finding the cheapest travel dates within a range."""
 
+    starlink: Literal["any", "likely", "possible"] = "any"
     origin: str = Field(
         description="Departure airport IATA code(s), comma-separated for multiple (e.g., 'JFK,LGA')"
     )
@@ -425,6 +427,8 @@ def _serialize_flight_leg(leg: Any) -> dict[str, Any]:
         out["operating_airline"] = _airline_code(leg.operating_airline)
     if getattr(leg, "aircraft", None):
         out["aircraft"] = leg.aircraft
+    if getattr(leg, "starlink", None) is not None:
+        out["starlink"] = leg.starlink.model_dump(mode="json", exclude_none=True)
     if getattr(leg, "legroom", None):
         out["legroom"] = leg.legroom
     if getattr(leg, "overnight", False):
@@ -644,6 +648,7 @@ def _build_flight_filters(
         emissions=emissions_filter,
         bags=bags_filter,
         show_all_results=params.show_all_results,
+        starlink=params.starlink,
     )
     return filters, trip_type, origins, destinations
 
@@ -679,6 +684,7 @@ def _execute_flight_search(params: FlightSearchParams) -> dict[str, Any]:
                 "success": True,
                 "flights": [],
                 "count": 0,
+                "starlink_filter": params.starlink,
                 "trip_type": trip_type.name,
                 "booking_url": booking_url,
             }
@@ -707,6 +713,7 @@ def _execute_flight_search(params: FlightSearchParams) -> dict[str, Any]:
         return {
             "success": True,
             "flights": flight_results,
+            "starlink_filter": params.starlink,
             "count": len(flight_results),
             "trip_type": trip_type.name,
             "booking_url": booking_url,
@@ -895,6 +902,7 @@ def _execute_date_search(params: DateSearchParams) -> dict[str, Any]:
             from_date=params.start_date,
             to_date=params.end_date,
             duration=durations[0],
+            starlink=params.starlink,
         )
 
         # Perform search
@@ -913,6 +921,7 @@ def _execute_date_search(params: DateSearchParams) -> dict[str, Any]:
                 "success": True,
                 "dates": [],
                 "count": 0,
+                "starlink_filter": params.starlink,
                 "trip_type": trip_type.name,
                 "date_range": f"{params.start_date} to {params.end_date}",
             }
@@ -932,6 +941,7 @@ def _execute_date_search(params: DateSearchParams) -> dict[str, Any]:
         return {
             "success": True,
             "dates": date_results,
+            "starlink_filter": params.starlink,
             "count": len(date_results),
             "trip_type": trip_type.name,
             "date_range": f"{params.start_date} to {params.end_date}",
@@ -991,6 +1001,13 @@ def search_flights(
     return_departure_window: Annotated[
         str | None, Field(description="Return departure hours (HH-HH); requires return_date")
     ] = None,
+    starlink: Annotated[
+        Literal["any", "likely", "possible"],
+        Field(
+            description="Fleet-inferred Starlink on EVERY leg, including returns. "
+            "Possible includes likely. Not confirmed; unknowns excluded when filtering."
+        ),
+    ] = "any",
     airlines: Annotated[
         list[str] | None,
         Field(description="Filter by airline IATA codes (e.g., ['BA', 'AA'])"),
@@ -1097,6 +1114,7 @@ def search_flights(
         return_date=return_date,
         departure_window=effective_departure_window,
         return_departure_window=return_departure_window,
+        starlink=starlink,
         airlines=airlines,
         cabin_class=cabin_class,
         max_stops=max_stops,
@@ -1173,6 +1191,13 @@ def search_dates(
     return_departure_window: Annotated[
         str | None, Field(description="Return departure hours (HH-HH); requires is_round_trip")
     ] = None,
+    starlink: Annotated[
+        Literal["any", "likely", "possible"],
+        Field(
+            description="Fleet-inferred Starlink on EVERY leg, including returns. "
+            "Possible includes likely. Not confirmed; may require extra return searches."
+        ),
+    ] = "any",
     is_round_trip: Annotated[
         bool,
         Field(description="Search for round-trip flights"),
@@ -1261,6 +1286,7 @@ def search_dates(
         min_duration=min_duration,
         max_duration=max_duration,
         return_departure_window=return_departure_window,
+        starlink=starlink,
         is_round_trip=is_round_trip,
         airlines=airlines,
         cabin_class=cabin_class,
@@ -1369,6 +1395,13 @@ def get_booking_options(
             " DEPARTURE_TIME, ARRIVAL_TIME, DURATION, EMISSIONS"
         ),
     ] = CONFIG.default_sort_by,
+    starlink: Annotated[
+        Literal["any", "likely", "possible"],
+        Field(
+            description="Fleet-inferred Starlink on EVERY leg. "
+            "Possible includes likely. Not flight-confirmed."
+        ),
+    ] = "any",
     exclude_airlines: Annotated[
         list[str] | None,
         Field(description="Airline IATA codes to EXCLUDE from results."),
@@ -1425,6 +1458,7 @@ def get_booking_options(
         return_date=return_date,
         departure_window=effective_departure_window,
         return_departure_window=return_departure_window,
+        starlink=starlink,
         cabin_class=cabin_class,
         max_stops=max_stops,
         sort_by=sort_by,

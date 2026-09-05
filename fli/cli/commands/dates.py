@@ -72,6 +72,13 @@ def dates(
     destination: Annotated[
         str, typer.Argument(help="Arrival IATA codes, comma-separated (e.g., LHR,CDG)")
     ],
+    starlink: Annotated[
+        str,
+        typer.Option(
+            "--starlink",
+            help="Starlink fleet evidence on EVERY leg: likely, possible, any. Not confirmed.",
+        ),
+    ] = "any",
     start_date: Annotated[
         str,
         typer.Option("--from", help="Start date (YYYY-MM-DD)"),
@@ -367,6 +374,7 @@ def dates(
                 if return_departure_window
                 else None
             ),
+            "starlink": starlink,
             "is_round_trip": is_round_trip,
             "passengers": passengers,
             "children": children,
@@ -447,6 +455,7 @@ def dates(
             from_date=start_date,
             to_date=end_date,
             duration=durations[0],
+            starlink=starlink,
         )
 
         # Perform search; pass currency/language/country through as URL params.

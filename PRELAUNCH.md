@@ -2,6 +2,29 @@
 
 Local development only. No GitHub push, registry publication, or public deployment.
 
+## Post-Batch Feature: Starlink Finder
+
+- CLI flights/dates and all three relevant MCP tools now accept `starlink` modes
+  `any`, `likely`, and `possible`. `glfi starlink` exposes the evidence catalog.
+- Matches use reviewed airline-owned fleet statements and actual operator/aircraft
+  fields, not generic Wi-Fi flags or invented probabilities. Initial scopes cover
+  Hawaiian, Qatar, and selected United/United Express equipment. Unknown is not no.
+- Every connection and return must qualify. Round-trip date scans expand returns
+  for this filter even without time restrictions. JSON/MCP legs retain the reason,
+  source and review dates. Text output labels the weakest leg's status.
+- No flight-confirmed mode: tail assignment, swaps, outages and route restrictions
+  are not verified. Evidence reviewed 2026-09-05, expires/requires review 2026-12-04.
+  Stale catalogs or dates beyond the review horizon fail explicitly when filtering.
+  Google links do not preserve the GLFI-only filter. See STARLINK.md.
+- Verification: 1,018 offline tests passed on Python 3.10/3.11/3.12/3.13, including
+  47 new regression tests. Ruff, wheel/sdist builds and Twine passed. Live DOH-LHR
+  on 2026-10-15 returned five likely candidates; JAX-IAD returned one possible
+  United E175 candidate. A four-day DOH-LHR round-trip date search passed.
+- Rebuilt/reinstalled own wheel; installed FastMCP 4.0.3 exposed all three schemas,
+  returned the possible JAX-IAD and likely round-trip date results, and passed
+  stdio/HTTP health/tool checks. Catalog command passed; no servers left running.
+  Original `fli`, TypeScript and publication state are unchanged.
+
 ## Completed In The First Batch
 
 - **#131 / PR #160:** regenerated airport and airline enums after fixing duplicate

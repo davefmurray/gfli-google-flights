@@ -11,6 +11,7 @@ from fli.cli.commands.airports import airports
 from fli.cli.commands.dates import dates
 from fli.cli.commands.flights import flights
 from fli.cli.commands.multi import multi
+from fli.cli.commands.starlink import starlink
 
 app = typer.Typer(
     help="GLFI: flight search for your terminal and AI assistants.",
@@ -22,6 +23,7 @@ app.command(name="airports")(airports)
 app.command(name="dates")(dates)
 app.command(name="flights")(flights)
 app.command(name="multi")(multi)
+app.command(name="starlink")(starlink)
 
 
 def _show_version(value: bool) -> None:
@@ -61,6 +63,7 @@ def cli():
         "dates",
         "flights",
         "multi",
+        "starlink",
         "--help",
         "--version",
         "-h",

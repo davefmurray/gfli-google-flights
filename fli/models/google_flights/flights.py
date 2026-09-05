@@ -24,6 +24,7 @@ from fli.models.google_flights.base import (
     SortBy,
     TripType,
 )
+from fli.models.starlink import StarlinkFilter
 
 
 class FlightSearchFilters(BaseModel):
@@ -49,6 +50,7 @@ class FlightSearchFilters(BaseModel):
     emissions: EmissionsFilter = EmissionsFilter.ALL
     bags: BagsFilter | None = None
     show_all_results: bool = True
+    starlink: StarlinkFilter = StarlinkFilter.ANY
 
     @model_validator(mode="after")
     def validate_segment_date_order(self) -> "FlightSearchFilters":

@@ -112,6 +112,9 @@ class SearchDates:
                         results_by_date[result.date] = result
             return sorted(results_by_date.values(), key=lambda r: (r.price, r.date)) or None
 
+        from fli.search.starlink import validate_starlink_filter
+
+        validate_starlink_filter(filters)
         if date_range <= self.MAX_DAYS_PER_SEARCH:
             return self._search_chunk(
                 filters, currency=currency, language=language, country=country
@@ -181,6 +184,7 @@ class SearchDates:
                     from_date=current_from.strftime("%Y-%m-%d"),
                     to_date=current_to.strftime("%Y-%m-%d"),
                     duration=filters.duration,
+                    starlink=filters.starlink,
                 )
             )
             current_from = current_to + timedelta(days=1)
@@ -266,9 +270,8 @@ class SearchDates:
 
         # Return windows are client-side filters: an outbound board alone cannot
         # establish that a qualifying return exists or quote its actual fare.
-        if (
-            filters.trip_type == TripType.ROUND_TRIP
-            and filters.flight_segments[1].time_restrictions
+        if filters.trip_type == TripType.ROUND_TRIP and (
+            filters.flight_segments[1].time_restrictions or filters.starlink != "any"
         ):
             from fli.search.flights import SearchFlights
 

@@ -20,6 +20,7 @@ from pydantic import (
 
 from fli.models.airline import Airline
 from fli.models.airport import Airport
+from fli.models.starlink import StarlinkAssessment
 
 
 def earliest_searchable_date() -> date:
@@ -307,6 +308,7 @@ class FlightLeg(BaseModel):
     operating_airline: Airline | None = None
     operating_flight_number: str | None = None
     aircraft: str | None = None
+    starlink: StarlinkAssessment | None = None
     legroom: str | None = None
     legroom_short: str | None = None
     amenities: Amenities | None = None

@@ -67,6 +67,7 @@ def _search_flights_core(
     min_layover: int | None = None,
     max_layover: int | None = None,
     return_departure_window: str | tuple[int, int] | None = None,
+    starlink: str = "any",
 ) -> None:
     """Core flight search functionality."""
     query: dict[str, Any] = {
@@ -83,6 +84,7 @@ def _search_flights_core(
         "cabin_class": cabin_class.upper(),
         "max_stops": max_stops.upper(),
         "sort_by": sort_by.upper(),
+        "starlink": starlink,
     }
 
     try:
@@ -194,6 +196,7 @@ def _search_flights_core(
             emissions=emissions_filter,
             bags=bags_filter,
             show_all_results=all_results,
+            starlink=starlink,
         )
 
         # Perform search; `currency` doubles as Google's `curr=` URL param so
@@ -332,6 +335,13 @@ def flights(
             help="Return date (YYYY-MM-DD)",
         ),
     ] = None,
+    starlink: Annotated[
+        str,
+        typer.Option(
+            "--starlink",
+            help="Starlink fleet evidence on EVERY leg: likely, possible, any. Not confirmed.",
+        ),
+    ] = "any",
     departure_window: Annotated[
         str | None,
         typer.Option(
@@ -556,6 +566,7 @@ def flights(
         return_date=return_date,
         departure_window=departure_window,
         return_departure_window=return_departure_window,
+        starlink=starlink,
         passengers=passengers,
         children=children,
         infants_in_seat=infants_in_seat,

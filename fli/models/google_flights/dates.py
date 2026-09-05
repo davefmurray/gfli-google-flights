@@ -26,6 +26,7 @@ from fli.models.google_flights.base import (
     TripType,
     earliest_searchable_date,
 )
+from fli.models.starlink import StarlinkFilter
 
 MAX_PAST_FROM_DATE_DAYS = 6
 
@@ -54,6 +55,7 @@ class DateSearchFilters(BaseModel):
     from_date: str
     to_date: str
     duration: PositiveInt | None = None
+    starlink: StarlinkFilter = StarlinkFilter.ANY
 
     @property
     def parsed_from_date(self) -> datetime:
