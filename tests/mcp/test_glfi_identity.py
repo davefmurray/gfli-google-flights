@@ -39,6 +39,9 @@ async def test_installed_stdio_server():
             "search_dates",
             "get_booking_options",
             "find_airports",
+            "save_search_preset",
+            "run_search_preset",
+            "manage_search_presets",
         }
         resources = await client.list_resources()
         assert "resource://glfi-mcp/configuration" in {str(r.uri) for r in resources}

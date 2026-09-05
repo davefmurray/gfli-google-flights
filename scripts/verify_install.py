@@ -4,6 +4,7 @@ Requires uv on PATH. No Google requests, publication, or global installation.
 """
 
 import argparse
+import json
 import os
 import subprocess
 import sys
@@ -36,7 +37,8 @@ from fastmcp import Client
 from fastmcp.client.transports import StdioTransport
 from fli.mcp.server import mcp
 
-expected = {'search_flights', 'search_dates', 'find_airports', 'get_booking_options'}
+expected = {'search_flights', 'search_dates', 'find_airports', 'get_booking_options',
+            'save_search_preset', 'run_search_preset', 'manage_search_presets'}
 
 async def check():
     command = str(Path(sysconfig.get_path('scripts')) / 'glfi-mcp')
@@ -105,6 +107,31 @@ def verify(artifact: Path, *, python: str, mcp: bool) -> None:
         assert "glfi" in run([cli, "--version"])
         run([cli, "--help"])
         assert "JAX" in run([cli, "airports", "Jacksonville"])
+        diagnostics = json.loads(run([cli, "doctor", "--json"]))
+        assert diagnostics["success"]
+        assert any(
+            c["name"] == "provider" and c["status"] == "skipped" for c in diagnostics["checks"]
+        )
+        from datetime import date, timedelta
+
+        day = (date.today() + timedelta(days=30)).isoformat()
+        run(
+            [
+                cli,
+                "save",
+                "install-check",
+                "--",
+                "JAX",
+                "JFK",
+                day,
+                "--no-overnight-layovers",
+                "--exclude-layover",
+                "ATL",
+            ]
+        )
+        stored = json.loads(run([cli, "presets", "show", "install-check"]))
+        assert stored["preset"]["filters"]["layover_restrictions"]["exclude_overnight"]
+        run([cli, "presets", "delete", "install-check"])
         if mcp:
             run([executable, "-c", MCP_CHECK])
         else:

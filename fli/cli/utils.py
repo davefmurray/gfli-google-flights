@@ -263,6 +263,8 @@ def serialize_flight_result(
         out = _serialize_flight_segment_result(
             flight_data, include_price=True, default_currency=default_currency
         )
+        if getattr(flight_data, "starlink_premium", None) is not None:
+            out["starlink_premium"] = flight_data.starlink_premium.model_dump()
         if booking_url:
             out["booking_url"] = booking_url
         return out
@@ -280,6 +282,8 @@ def serialize_flight_result(
             "outbound": _serialize_flight_segment_result(outbound),
             "return": _serialize_flight_segment_result(return_flight),
         }
+        if getattr(return_flight, "starlink_premium", None) is not None:
+            out["starlink_premium"] = return_flight.starlink_premium.model_dump()
         if booking_url:
             out["booking_url"] = booking_url
         return out
@@ -437,6 +441,14 @@ def display_flight_results(
         # The final selection carries the complete itinerary fare, not an add-on.
         price_segment = flight_segments[-1]
         total_price = price_segment.price
+        premium = getattr(price_segment, "starlink_premium", None)
+        if premium is not None:
+            table.add_row(
+                "Starlink premium",
+                f"+{format_price(premium.amount, premium.currency)} "
+                "vs cheapest known same-search fare "
+                f"({format_price(premium.baseline_price, premium.currency)})",
+            )
         table.add_row(
             "Total Price", format_price(total_price, price_segment.currency or default_currency)
         )

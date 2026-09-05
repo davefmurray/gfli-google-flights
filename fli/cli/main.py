@@ -11,7 +11,9 @@ from fli.cli.commands.airports import airports
 from fli.cli.commands.dates import dates
 from fli.cli.commands.flights import flights
 from fli.cli.commands.multi import multi
+from fli.cli.commands.presets import presets_app, run, save
 from fli.cli.commands.starlink import starlink
+from fli.cli.doctor import doctor
 
 app = typer.Typer(
     help="GLFI: flight search for your terminal and AI assistants.",
@@ -24,6 +26,10 @@ app.command(name="dates")(dates)
 app.command(name="flights")(flights)
 app.command(name="multi")(multi)
 app.command(name="starlink")(starlink)
+app.command(name="doctor")(doctor)
+app.command(name="save")(save)
+app.command(name="run")(run)
+app.add_typer(presets_app, name="presets")
 
 
 def _show_version(value: bool) -> None:
@@ -64,6 +70,10 @@ def cli():
         "flights",
         "multi",
         "starlink",
+        "doctor",
+        "save",
+        "run",
+        "presets",
         "--help",
         "--version",
         "-h",

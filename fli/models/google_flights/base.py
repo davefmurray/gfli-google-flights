@@ -239,8 +239,30 @@ class LayoverRestrictions(BaseModel):
     """
 
     airports: list[Airport] | None = None
+    exclude_airports: list[Airport] | None = None
+    exclude_overnight: bool = False
     min_duration: PositiveInt | None = None
     max_duration: PositiveInt | None = None
+
+    @model_validator(mode="after")
+    def validate_bounds(self) -> "LayoverRestrictions":
+        """Reject contradictory connection constraints."""
+        if self.min_duration and self.max_duration and self.min_duration > self.max_duration:
+            raise ValueError("Minimum layover cannot exceed maximum layover")
+        if set(self.airports or []) & set(self.exclude_airports or []):
+            raise ValueError("A connection airport cannot be both included and excluded")
+        return self
+
+    @property
+    def active(self) -> bool:
+        """Whether any connection constraint requires enforcement."""
+        return bool(
+            self.airports
+            or self.exclude_airports
+            or self.exclude_overnight
+            or self.min_duration
+            or self.max_duration
+        )
 
 
 class Amenities(BaseModel):
@@ -335,6 +357,15 @@ class BookingOption(BaseModel):
     flights: list[tuple[str, str]] | None = None  # [(airline_code, flight_number), ...]
 
 
+class StarlinkPremium(BaseModel):
+    """Difference from the cheapest known comparable quote in this search."""
+
+    baseline_price: NonNegativeFloat
+    amount: NonNegativeFloat
+    currency: str
+    scope: str = "Same-search known fares; all other filters unchanged; total party price"
+
+
 class FlightResult(BaseModel):
     """Complete flight search result with pricing and timing.
 
@@ -370,6 +401,7 @@ class FlightResult(BaseModel):
     primary_airline: Airline | None = None
     primary_airline_name: str | None = None
     booking_token: str | None = None
+    starlink_premium: StarlinkPremium | None = None
 
     @property
     def price_unknown(self) -> bool:

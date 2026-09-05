@@ -271,7 +271,9 @@ class SearchDates:
         # Return windows are client-side filters: an outbound board alone cannot
         # establish that a qualifying return exists or quote its actual fare.
         if filters.trip_type == TripType.ROUND_TRIP and (
-            filters.flight_segments[1].time_restrictions or filters.starlink != "any"
+            filters.flight_segments[1].time_restrictions
+            or filters.starlink != "any"
+            or (filters.layover_restrictions and filters.layover_restrictions.active)
         ):
             from fli.search.flights import SearchFlights
 

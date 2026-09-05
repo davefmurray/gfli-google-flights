@@ -105,6 +105,10 @@ class FlightSearchParams(BaseModel):
     """Parameters for searching flights on a specific date."""
 
     starlink: Literal["any", "likely", "possible"] = "any"
+    starlink_premium: bool = False
+    layover: list[str] | None = None
+    exclude_layover: list[str] | None = None
+    no_overnight_layovers: bool = False
     origin: str = Field(
         description="Departure airport IATA code(s), comma-separated for multiple (e.g., 'JFK,LGA')"
     )
@@ -199,6 +203,9 @@ class DateSearchParams(BaseModel):
     """Parameters for finding the cheapest travel dates within a range."""
 
     starlink: Literal["any", "likely", "possible"] = "any"
+    layover: list[str] | None = None
+    exclude_layover: list[str] | None = None
+    no_overnight_layovers: bool = False
     origin: str = Field(
         description="Departure airport IATA code(s), comma-separated for multiple (e.g., 'JFK,LGA')"
     )
@@ -492,6 +499,8 @@ def _serialize_flight_result(
             "legs": [_serialize_flight_leg(leg) for leg in flight.legs],
         }
         out.update(_flight_extras(flight))
+        if getattr(flight, "starlink_premium", None) is not None:
+            out["starlink_premium"] = flight.starlink_premium.model_dump()
         if booking_url:
             out["booking_url"] = booking_url
         return out
@@ -510,6 +519,8 @@ def _serialize_flight_result(
             ],
         }
         out.update(_flight_extras(outbound))
+        if getattr(return_flight, "starlink_premium", None) is not None:
+            out["starlink_premium"] = return_flight.starlink_premium.model_dump()
         return_extras = _flight_extras(return_flight)
         if return_extras:
             out["return_flight"] = return_extras
@@ -619,10 +630,21 @@ def _build_flight_filters(
         bags_filter = BagsFilter(checked_bags=params.checked_bags, carry_on=params.carry_on)
 
     layover_restrictions = None
-    if params.min_layover is not None or params.max_layover is not None:
+    if (
+        params.min_layover is not None
+        or params.max_layover is not None
+        or params.layover
+        or params.exclude_layover
+        or params.no_overnight_layovers
+    ):
         from fli.models import LayoverRestrictions
 
         layover_restrictions = LayoverRestrictions(
+            airports=resolve_airports(",".join(params.layover)) if params.layover else None,
+            exclude_airports=resolve_airports(",".join(params.exclude_layover))
+            if params.exclude_layover
+            else None,
+            exclude_overnight=params.no_overnight_layovers,
             min_duration=params.min_layover,
             max_duration=params.max_layover,
         )
@@ -649,17 +671,31 @@ def _build_flight_filters(
         bags=bags_filter,
         show_all_results=params.show_all_results,
         starlink=params.starlink,
+        starlink_premium=params.starlink_premium,
     )
     return filters, trip_type, origins, destinations
 
 
-def _execute_flight_search(params: FlightSearchParams) -> dict[str, Any]:
+def _execute_flight_search(
+    params: FlightSearchParams, *, save_as: str | None = None, replace: bool = False
+) -> dict[str, Any]:
     """Execute a flight search and return formatted results."""
     try:
         filters, trip_type, origins, destinations = _build_flight_filters(params)
 
         # Perform search
         currency = parse_currency(params.currency)
+        if save_as is not None:
+            from fli.presets import save_preset
+
+            return save_preset(
+                save_as,
+                filters,
+                replace=replace,
+                currency=currency,
+                language=params.language,
+                country=params.country,
+            )
         search_client = SearchFlights()
         flights = search_client.search(
             filters,
@@ -838,7 +874,9 @@ def _execute_booking_options(
         return {"success": False, "error": f"Booking lookup failed: {e}", "options": []}
 
 
-def _execute_date_search(params: DateSearchParams) -> dict[str, Any]:
+def _execute_date_search(
+    params: DateSearchParams, *, save_as: str | None = None, replace: bool = False
+) -> dict[str, Any]:
     """Execute a date search and return formatted results."""
     try:
         # Parse inputs using shared utilities (supports comma-separated multi-airport)
@@ -874,10 +912,21 @@ def _execute_date_search(params: DateSearchParams) -> dict[str, Any]:
         )
 
         layover_restrictions = None
-        if params.min_layover is not None or params.max_layover is not None:
+        if (
+            params.min_layover is not None
+            or params.max_layover is not None
+            or params.layover
+            or params.exclude_layover
+            or params.no_overnight_layovers
+        ):
             from fli.models import LayoverRestrictions
 
             layover_restrictions = LayoverRestrictions(
+                airports=resolve_airports(",".join(params.layover)) if params.layover else None,
+                exclude_airports=resolve_airports(",".join(params.exclude_layover))
+                if params.exclude_layover
+                else None,
+                exclude_overnight=params.no_overnight_layovers,
                 min_duration=params.min_layover,
                 max_duration=params.max_layover,
             )
@@ -907,6 +956,19 @@ def _execute_date_search(params: DateSearchParams) -> dict[str, Any]:
 
         # Perform search
         currency = parse_currency(params.currency)
+        if save_as is not None:
+            from fli.presets import save_preset
+
+            return save_preset(
+                save_as,
+                filters,
+                replace=replace,
+                currency=currency,
+                language=params.language,
+                country=params.country,
+                durations=durations if params.min_duration is not None else None,
+                sort_by_price=params.sort_by_price or params.min_duration is not None,
+            )
         search_client = SearchDates()
         dates = search_client.search(
             filters,
@@ -1100,6 +1162,20 @@ def search_flights(
         int | None,
         Field(description="Maximum layover duration in minutes.", ge=1),
     ] = None,
+    layover: Annotated[
+        list[str] | None, Field(description="Allowed connection airport codes.")
+    ] = None,
+    exclude_layover: Annotated[
+        list[str] | None, Field(description="Excluded connection airport codes.")
+    ] = None,
+    no_overnight_layovers: Annotated[
+        bool,
+        Field(description="Exclude connections crossing local midnight, not overnight flights."),
+    ] = False,
+    starlink_premium: Annotated[
+        bool,
+        Field(description="Compare same-search known fares; requires starlink likely/possible."),
+    ] = False,
 ) -> dict[str, Any]:
     """Search for flights between two airports on a specific date.
 
@@ -1136,6 +1212,10 @@ def search_flights(
         exclude_alliance=exclude_alliance,
         min_layover=min_layover,
         max_layover=max_layover,
+        layover=layover,
+        exclude_layover=exclude_layover,
+        no_overnight_layovers=no_overnight_layovers,
+        starlink_premium=starlink_premium,
     )
     return _execute_flight_search(params)
 
@@ -1270,6 +1350,16 @@ def search_dates(
         int,
         Field(description="Number of infants on lap", ge=0),
     ] = 0,
+    layover: Annotated[
+        list[str] | None, Field(description="Allowed connection airport codes.")
+    ] = None,
+    exclude_layover: Annotated[
+        list[str] | None, Field(description="Excluded connection airport codes.")
+    ] = None,
+    no_overnight_layovers: Annotated[
+        bool,
+        Field(description="Exclude connections crossing local midnight, not overnight flights."),
+    ] = False,
 ) -> dict[str, Any]:
     """Find the cheapest travel dates between two airports within a date range.
 
@@ -1305,6 +1395,9 @@ def search_dates(
         children=children,
         infants_in_seat=infants_in_seat,
         infants_on_lap=infants_on_lap,
+        layover=layover,
+        exclude_layover=exclude_layover,
+        no_overnight_layovers=no_overnight_layovers,
     )
     return _execute_date_search(params)
 
@@ -1434,6 +1527,20 @@ def get_booking_options(
         bool,
         Field(description="Include carry-on bag fee in displayed price"),
     ] = False,
+    layover: Annotated[
+        list[str] | None, Field(description="Allowed connection airport codes.")
+    ] = None,
+    exclude_layover: Annotated[
+        list[str] | None, Field(description="Excluded connection airport codes.")
+    ] = None,
+    no_overnight_layovers: Annotated[
+        bool,
+        Field(description="Exclude connections crossing local midnight, not overnight flights."),
+    ] = False,
+    starlink_premium: Annotated[
+        bool,
+        Field(description="Compare same-search known fares; requires starlink likely/possible."),
+    ] = False,
 ) -> dict[str, Any]:
     """Get bookable fares (vendor names, prices, and direct booking URLs) for a flight.
 
@@ -1479,6 +1586,10 @@ def get_booking_options(
         exclude_alliance=exclude_alliance,
         min_layover=min_layover,
         max_layover=max_layover,
+        layover=layover,
+        exclude_layover=exclude_layover,
+        no_overnight_layovers=no_overnight_layovers,
+        starlink_premium=starlink_premium,
     )
     return _execute_booking_options(params, flight_numbers)
 
@@ -1488,6 +1599,111 @@ def _get_booking_options_from_params(
 ) -> dict[str, Any]:
     """Entry point for tests that call the tool via a params object."""
     return _execute_booking_options(params, flight_numbers)
+
+
+@mcp.tool(annotations={"readOnlyHint": False, "destructiveHint": True, "openWorldHint": False})
+def save_search_preset(
+    name: str,
+    flights: FlightSearchParams | None = None,
+    dates: DateSearchParams | None = None,
+    replace: bool = False,
+) -> dict[str, Any]:
+    """Save exactly one flight or date request locally without contacting Google.
+
+    Presets contain travel preferences and dates, never credentials or booking tokens.
+    Existing names are protected unless replace is explicitly true.
+    """
+    if (flights is None) == (dates is None):
+        return {"success": False, "error": "Supply exactly one of flights or dates"}
+    if flights is not None:
+        return _execute_flight_search(flights, save_as=name, replace=replace)
+    return _execute_date_search(dates, save_as=name, replace=replace)
+
+
+@mcp.tool(annotations={"readOnlyHint": False, "destructiveHint": True, "openWorldHint": False})
+def manage_search_presets(
+    action: Literal["list", "show", "delete"],
+    name: str | None = None,
+) -> dict[str, Any]:
+    """List, inspect or explicitly delete local presets shared with the CLI."""
+    from fli.presets import delete_preset, list_presets, load_preset
+
+    try:
+        if action == "list":
+            return {"success": True, "presets": list_presets()}
+        if not name:
+            raise ValueError("Preset name is required")
+        if action == "show":
+            return {
+                "success": True,
+                "name": name,
+                "preset": load_preset(name).model_dump(mode="json"),
+            }
+        delete_preset(name)
+        return {"success": True, "deleted": name}
+    except (ValueError, OSError) as exc:
+        return {"success": False, "error": str(exc)}
+
+
+@mcp.tool(annotations={"readOnlyHint": True, "idempotentHint": True})
+def run_search_preset(
+    name: str,
+    departure_date: str | None = None,
+    return_date: str | None = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
+) -> dict[str, Any]:
+    """Run a saved search. Moving its first date shifts other dates; the file is unchanged."""
+    from fli.presets import execute_preset, prepare_preset
+
+    try:
+        preset, filters = prepare_preset(
+            name,
+            departure_date=departure_date,
+            return_date=return_date,
+            start_date=start_date,
+            end_date=end_date,
+        )
+        results = execute_preset(preset, filters)
+        locale = (preset.currency, preset.language, preset.country)
+        if preset.kind == "flights":
+            client = SearchFlights()
+            output = [
+                _serialize_flight_result(
+                    result,
+                    filters.trip_type == TripType.ROUND_TRIP,
+                    booking_url=client.build_flight_booking_url(
+                        result,
+                        currency=preset.currency,
+                        language=preset.language,
+                        country=preset.country,
+                        seat_type=filters.seat_type,
+                        passenger_info=filters.passenger_info,
+                    ),
+                )
+                for result in results
+            ]
+        else:
+            origins = [a[0] for a in filters.flight_segments[0].departure_airport]
+            destinations = [a[0] for a in filters.flight_segments[0].arrival_airport]
+            output = [
+                _serialize_date_result(result, origins, destinations, locale, filters)
+                for result in results
+            ]
+        if CONFIG.max_results:
+            output = output[: CONFIG.max_results]
+        return {
+            "success": True,
+            "preset": name,
+            "trip_type": filters.trip_type.name,
+            "starlink_filter": filters.starlink,
+            preset.kind: output,
+            "count": len(output),
+        }
+    except SearchClientError as exc:
+        return {"success": False, "error": str(exc), "error_type": search_error_type(exc)}
+    except (ValueError, OSError, KeyError) as exc:
+        return {"success": False, "error": str(exc), "error_type": "validation"}
 
 
 def _find_airports_impl(query: str, limit: int = 10) -> dict[str, Any]:

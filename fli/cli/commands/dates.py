@@ -72,6 +72,31 @@ def dates(
     destination: Annotated[
         str, typer.Argument(help="Arrival IATA codes, comma-separated (e.g., LHR,CDG)")
     ],
+    save_as: Annotated[
+        str | None, typer.Option("--save", help="Save a preset without searching.")
+    ] = None,
+    replace_preset: Annotated[
+        bool, typer.Option("--replace-preset", help="Allow replacing an existing preset.")
+    ] = False,
+    layover: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--layover", help="Only connect at these airports; repeat or comma-separate codes."
+        ),
+    ] = None,
+    exclude_layover: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--exclude-layover", help="Exclude connecting airports; repeat or comma-separate codes."
+        ),
+    ] = None,
+    no_overnight_layovers: Annotated[
+        bool,
+        typer.Option(
+            "--no-overnight-layovers",
+            help="Exclude connections crossing local midnight, not overnight flights.",
+        ),
+    ] = False,
     starlink: Annotated[
         str,
         typer.Option(
@@ -375,6 +400,11 @@ def dates(
                 else None
             ),
             "starlink": starlink,
+            "min_layover": min_layover,
+            "max_layover": max_layover,
+            "layover": layover,
+            "exclude_layover": exclude_layover,
+            "no_overnight_layovers": no_overnight_layovers,
             "is_round_trip": is_round_trip,
             "passengers": passengers,
             "children": children,
@@ -427,10 +457,21 @@ def dates(
         # Build layover constraints (min / max duration; airports stay
         # restricted via the existing model field).
         layover_restrictions = None
-        if min_layover is not None or max_layover is not None:
+        if (
+            min_layover is not None
+            or max_layover is not None
+            or layover
+            or exclude_layover
+            or no_overnight_layovers
+        ):
             from fli.models import LayoverRestrictions
 
             layover_restrictions = LayoverRestrictions(
+                airports=resolve_airports(",".join(layover)) if layover else None,
+                exclude_airports=resolve_airports(",".join(exclude_layover))
+                if exclude_layover
+                else None,
+                exclude_overnight=no_overnight_layovers,
                 min_duration=min_layover,
                 max_duration=max_layover,
             )
@@ -457,6 +498,28 @@ def dates(
             duration=durations[0],
             starlink=starlink,
         )
+
+        if save_as is not None:
+            from fli.cli.enums import DayOfWeek
+            from fli.presets import save_preset
+
+            weekdays = [list(DayOfWeek).index(day) for day in selected_days]
+            saved = save_preset(
+                save_as,
+                filters,
+                replace=replace_preset,
+                currency=currency,
+                language=language,
+                country=country,
+                durations=durations if min_duration is not None else None,
+                weekdays=weekdays,
+                sort_by_price=query["sort_by_price"],
+            )
+            if output_format == OutputFormat.JSON:
+                emit_json(saved)
+            else:
+                typer.echo(f"Saved preset '{save_as}' (no search performed).")
+            return
 
         # Perform search; pass currency/language/country through as URL params.
         search_client = SearchDates()

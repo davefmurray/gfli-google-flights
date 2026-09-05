@@ -151,6 +151,19 @@ class SearchFlights:
         from fli.search.starlink import validate_starlink_filter
 
         validate_starlink_filter(filters)
+        if filters.starlink_premium:
+            from fli.models.starlink import StarlinkFilter
+            from fli.search.premium import compare_starlink_fares
+
+            if top_n is not None:
+                raise ValueError("Starlink premium requires uncapped outbound expansion")
+            baseline_filters = filters.model_copy(
+                update={"starlink": StarlinkFilter.ANY, "starlink_premium": False}, deep=True
+            )
+            results = self.search(
+                baseline_filters, currency=currency, language=language, country=country
+            )
+            return compare_starlink_fares(results or [], filters.starlink) or None
         flights = self._fetch_flights(
             filters,
             currency=currency,

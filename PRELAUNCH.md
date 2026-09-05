@@ -2,6 +2,51 @@
 
 Local development only. No GitHub push, registry publication, or public deployment.
 
+## Final Selected Feature Batch
+
+- Saved flight/date presets shared by CLI and MCP: `glfi save NAME -- ...`,
+  `glfi run NAME`, and `glfi presets list|show|delete`. Saving never searches.
+  Date overrides revalidate in memory, without changing stored preferences.
+  Versioned JSON, atomic writes, explicit replacement, private POSIX permissions,
+  and no persisted booking sessions or credentials. No background monitoring.
+- `--starlink-premium` compares each qualifying itinerary with the cheapest known
+  same-currency quote in the same search, holding other filters constant. Complete
+  selected round-trip quotes are compared, never summed or substituted with
+  outbound starting fares. Missing quote/currency means no comparison. This is
+  returned-inventory comparison, not a market-wide guarantee or Wi-Fi fee.
+- Connection controls enforce inclusive min/max waits at every stop, include or
+  exclude connecting airports, and reject overnight waits when requested. Returns
+  are expanded for connection-constrained round-trip dates. Airport transfers are
+  excluded when timing cannot be established; local timestamp/DST limits are
+  documented. Nonstop flights still qualify; overnight flights are not excluded
+  merely because overnight connections are excluded.
+- `glfi doctor` checks installation, dependencies/MCP configuration, preset files
+  and Starlink freshness without contacting Google. An invalid timeout no longer
+  prevents diagnostics from loading. Provider checking is explicitly opt-in;
+  cookie values and captured MCP stderr are not printed.
+- Seven MCP tools: the existing four plus `save_search_preset`,
+  `run_search_preset`, and `manage_search_presets`. Presets belong to the server's
+  OS user; no public multi-user storage or authentication is implied.
+- Deferred work is tracked in [FUTURE_FEATURES.md](FUTURE_FEATURES.md), including
+  work-friendly ranking, alerts, flight-confirmed Starlink, Explore, fare-data
+  limitations, and distribution/parity work. These are not new release gates.
+- Verification: 1,075 offline tests passed on each of Python 3.10/3.11/3.12/3.13,
+  including 57 new feature regressions. Ruff lint/format, build, Twine, fresh
+  core wheel, MCP wheel and MCP sdist installs passed, including stdio/HTTP checks.
+  The premium expiry-sensitive test was then made clock-independent and its
+  eight-test module passed again on 3.11; production code was unchanged.
+- Live: JAX-LHR 2026-10-15 returned 12 itineraries; all 13 connections satisfied
+  60-180 minutes, avoided JFK and did not cross local midnight. An installed
+  CLI-saved JAX-IAD preset ran through installed FastMCP 4.0.3, returning one
+  possible-Starlink itinerary at USD 243 vs a USD 93 same-search baseline (USD 150
+  premium). This preset required no overnight connections, without the JFK or
+  duration constraints of the separate test. A connection-constrained round-trip
+  date search returned one pair. These are smoke observations, not fare promises.
+- Rebuilt/reinstalled own GLFI wheel. Original `fli` untouched; temporary presets
+  removed and test servers stopped. TypeScript/dependencies unchanged; prior
+  audits/TypeScript checks were not repeated. Docker and remote release gates
+  remain unverified here. Nothing pushed or published.
+
 ## Post-Batch Feature: Starlink Finder
 
 - CLI flights/dates and all three relevant MCP tools now accept `starlink` modes

@@ -51,6 +51,14 @@ class FlightSearchFilters(BaseModel):
     bags: BagsFilter | None = None
     show_all_results: bool = True
     starlink: StarlinkFilter = StarlinkFilter.ANY
+    starlink_premium: bool = False
+
+    @model_validator(mode="after")
+    def validate_premium(self) -> "FlightSearchFilters":
+        """Require a chosen Starlink threshold when comparing fares."""
+        if self.starlink_premium and self.starlink == StarlinkFilter.ANY:
+            raise ValueError("Starlink premium requires starlink=likely or possible")
+        return self
 
     @model_validator(mode="after")
     def validate_segment_date_order(self) -> "FlightSearchFilters":

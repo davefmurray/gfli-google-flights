@@ -24,7 +24,6 @@ from fli.core import (
     parse_emissions,
     parse_max_stops,
     parse_sort_by,
-    resolve_airport,
 )
 from fli.core.parsers import ParseError, resolve_airports
 from fli.models import (
@@ -68,6 +67,11 @@ def _search_flights_core(
     max_layover: int | None = None,
     return_departure_window: str | tuple[int, int] | None = None,
     starlink: str = "any",
+    starlink_premium: bool = False,
+    exclude_layover: list[str] | None = None,
+    no_overnight_layovers: bool = False,
+    save_as: str | None = None,
+    replace_preset: bool = False,
 ) -> None:
     """Core flight search functionality."""
     query: dict[str, Any] = {
@@ -85,6 +89,11 @@ def _search_flights_core(
         "max_stops": max_stops.upper(),
         "sort_by": sort_by.upper(),
         "starlink": starlink,
+        "starlink_premium": starlink_premium,
+        "min_layover": min_layover,
+        "max_layover": max_layover,
+        "exclude_layover": exclude_layover,
+        "no_overnight_layovers": no_overnight_layovers,
     }
 
     try:
@@ -161,10 +170,20 @@ def _search_flights_core(
 
         # Parse layover constraints (airports, min duration, max duration).
         layover_restrictions = None
-        layover_airports = [resolve_airport(code) for code in layover] if layover else None
-        if layover_airports or min_layover is not None or max_layover is not None:
+        layover_airports = resolve_airports(",".join(layover)) if layover else None
+        if (
+            layover_airports
+            or min_layover is not None
+            or max_layover is not None
+            or exclude_layover
+            or no_overnight_layovers
+        ):
             layover_restrictions = LayoverRestrictions(
                 airports=layover_airports,
+                exclude_airports=resolve_airports(",".join(exclude_layover))
+                if exclude_layover
+                else None,
+                exclude_overnight=no_overnight_layovers,
                 min_duration=min_layover,
                 max_duration=max_layover,
             )
@@ -197,7 +216,25 @@ def _search_flights_core(
             bags=bags_filter,
             show_all_results=all_results,
             starlink=starlink,
+            starlink_premium=starlink_premium,
         )
+
+        if save_as is not None:
+            from fli.presets import save_preset
+
+            saved = save_preset(
+                save_as,
+                filters,
+                replace=replace_preset,
+                currency=currency,
+                language=language,
+                country=country,
+            )
+            if output_format == OutputFormat.JSON:
+                emit_json(saved)
+            else:
+                typer.echo(f"Saved preset '{save_as}' (no search performed).")
+            return
 
         # Perform search; `currency` doubles as Google's `curr=` URL param so
         # results come back priced in the requested currency.
@@ -335,6 +372,32 @@ def flights(
             help="Return date (YYYY-MM-DD)",
         ),
     ] = None,
+    save_as: Annotated[
+        str | None, typer.Option("--save", help="Save a preset without searching.")
+    ] = None,
+    replace_preset: Annotated[
+        bool, typer.Option("--replace-preset", help="Allow replacing an existing preset.")
+    ] = False,
+    starlink_premium: Annotated[
+        bool,
+        typer.Option(
+            "--starlink-premium",
+            help="Compare with cheapest same-search fare; requires --starlink likely/possible.",
+        ),
+    ] = False,
+    exclude_layover: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--exclude-layover", help="Exclude connecting airports; repeat or comma-separate codes."
+        ),
+    ] = None,
+    no_overnight_layovers: Annotated[
+        bool,
+        typer.Option(
+            "--no-overnight-layovers",
+            help="Exclude connections crossing local midnight, not overnight flights.",
+        ),
+    ] = False,
     starlink: Annotated[
         str,
         typer.Option(
@@ -567,6 +630,11 @@ def flights(
         departure_window=departure_window,
         return_departure_window=return_departure_window,
         starlink=starlink,
+        starlink_premium=starlink_premium,
+        exclude_layover=exclude_layover,
+        no_overnight_layovers=no_overnight_layovers,
+        save_as=save_as,
+        replace_preset=replace_preset,
         passengers=passengers,
         children=children,
         infants_in_seat=infants_in_seat,

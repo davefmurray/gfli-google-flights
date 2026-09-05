@@ -137,6 +137,95 @@ date range. Date results are matching fare/date pairs; run a flight search for
 per-leg evidence. Google booking/search links do not preserve this GLFI-only filter.
 Aircraft swaps, outages, route restrictions, and access requirements still apply.
 
+## Connection Controls
+
+```sh
+glfi JAX LHR 2026-10-15 --min-layover 60 --max-layover 180 --exclude-layover JFK,EWR --no-overnight-layovers
+glfi dates JAX LHR --from 2026-10-15 --to 2026-10-16 --round --duration 4 --max-layover 180 --no-overnight-layovers
+```
+
+Bounds are inclusive minutes at **each** connection, not total trip duration.
+`--layover ATL,ORD` allows only those connecting airports; `--exclude-layover`
+excludes them. Both accept repeated flags. Nonstop flights still qualify.
+`--no-overnight-layovers` excludes waits crossing local midnight, not red-eye
+flights. Constraints apply to both directions of a round trip. Constrained
+round-trip date searches expand returns and can make substantially more requests.
+Timing uses Google's airport-local timestamps, not a timezone database; DST
+elapsed-time ambiguities remain. Airport transfers are excluded when requested
+timing/overnight rules cannot be verified. Google links may not preserve local
+exclusions; always check the selected itinerary before booking.
+
+## Starlink Fare Comparison
+
+```sh
+glfi JAX IAD 2026-10-15 --starlink possible --starlink-premium
+```
+
+Adds a `starlink_premium` to each qualifying itinerary: the difference from the
+cheapest **known same-currency fare in the same search**, with all other filters
+unchanged. Round trips use the final selected complete-trip fare; prices are for
+the entire passenger party. Zero means the candidate is already cheapest.
+No cross-currency conversion, guessed currency, or missing-price substitution.
+If its quote/currency is missing, the comparison is omitted. This is a comparison
+of returned inventory, not the whole market or an onboard internet fee.
+The baseline search includes non-Starlink outbound candidates, so round-trip
+comparisons can require more requests. Supported on fixed-date flight searches,
+not date grids. JSON and MCP expose the baseline, difference, currency and scope.
+
+## Saved Presets
+
+```sh
+glfi save work-trip -- JAX IAD 2026-10-15 --starlink possible --starlink-premium --no-overnight-layovers
+glfi run work-trip
+glfi run work-trip --date 2026-11-05 --format json
+glfi presets list
+glfi presets show work-trip
+glfi presets delete work-trip
+```
+
+Saving performs **no search**. `glfi flights ... --save NAME` and
+`glfi dates ... --save NAME` are equivalent; `glfi save NAME -- dates ...`
+also works. Add `--replace-preset` to the search arguments to explicitly replace
+an existing name. Presets preserve filters, passenger mix, cabin, locale,
+connection/Starlink preferences, and date-scan weekday/stay-duration settings.
+
+`run --date` moves a flight preset's first date and shifts its return by the same
+amount; `--return` can override that return. Date presets use `--from` / `--to`;
+moving `--from` shifts the saved window. Overrides do not rewrite the preset.
+Old dates remain inspectable but must be updated before running. Starlink
+freshness and all ordinary search validation still apply.
+
+Versioned JSON files live in `~/.config/glfi/presets` by default, respecting
+`XDG_CONFIG_HOME`; `GLFI_PRESET_DIR` overrides the directory. New directories are
+owner-only and files are mode 0600 on POSIX, with atomic writes and no silent
+overwrites. Files contain travel preferences and dates, not credentials or
+booking tokens. They are not encrypted and have no scheduler or notification
+service. MCP shares the same store under the server's OS user; use separate
+directories/users for separate trust boundaries.
+
+MCP `save_search_preset` takes `name` and exactly one structured `flights` or
+`dates` request. `run_search_preset` accepts the same date overrides as the CLI;
+`manage_search_presets` supports `list`, `show`, and explicit `delete`.
+
+## Installation Diagnostics
+
+```sh
+glfi doctor
+glfi doctor --json
+glfi doctor --check-provider
+```
+
+Checks Python/distribution, dependencies and MCP configuration, preset files,
+and Starlink evidence freshness. Default diagnostics make no network requests
+and change no files. Missing optional MCP dependencies or stale evidence are
+warnings; configuration/install errors exit nonzero. Cookie values and captured
+MCP stderr are never printed. The opt-in provider check performs one nonstop
+JAX-JFK search 30 days ahead, subject to the normal timeout and retry policy.
+It does not start an MCP server or verify a remote client's configuration.
+
+Deferred ideas and their prerequisites are tracked in
+[FUTURE_FEATURES.md](FUTURE_FEATURES.md).
+
 ## MCP
 
 Install with the `[mcp]` extra. The same package supplies the CLI and both MCP transports.
@@ -155,7 +244,8 @@ For a local MCP client, add this server entry to its configuration:
 
 Use the absolute path returned by `command -v glfi-mcp` if the client does not
 inherit your shell's PATH. Tools: `search_flights`, `search_dates`,
-`find_airports`, and `get_booking_options` (subject to the limitation below).
+`find_airports`, and `get_booking_options` (subject to the limitation below), plus
+`save_search_preset`, `run_search_preset`, and `manage_search_presets`.
 Configuration uses `GLFI_MCP_` environment variables, such as
 `GLFI_MCP_DEFAULT_CURRENCY=USD` and `GLFI_MCP_MAX_RESULTS=10`.
 
