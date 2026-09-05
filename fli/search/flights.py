@@ -19,6 +19,7 @@ from fli.models import (
     BookingOption,
     FlightResult,
     FlightSearchFilters,
+    PassengerInfo,
     SeatType,
 )
 from fli.models.google_flights.base import SortBy, TripType
@@ -392,6 +393,7 @@ class SearchFlights:
         language: str | None = None,
         country: str | None = None,
         seat_type: SeatType = SeatType.ECONOMY,
+        passenger_info: PassengerInfo | None = None,
     ) -> str:
         """Build a Google Flights deep-link URL for a specific itinerary.
 
@@ -414,6 +416,8 @@ class SearchFlights:
             country: ISO 3166-1 alpha-2 country code appended as ``gl=``.
             seat_type: Cabin class encoded into the ``tfs`` token (field 9).
                 Defaults to economy for backward compatibility.
+            passenger_info: Search party, preserved in the booking link.
+                Defaults to one adult for backward compatibility.
 
         Returns:
             A ``https://www.google.com/travel/flights/booking?tfs=…`` URL.
@@ -442,7 +446,12 @@ class SearchFlights:
                     for leg in result.legs
                 ]
                 segments.append(seg_legs)
-            tfs = build_tfs_token(segments, is_one_way=is_one_way, seat=seat_type.value)
+            tfs = build_tfs_token(
+                segments,
+                is_one_way=is_one_way,
+                seat=seat_type.value,
+                passengers=(passenger_info or PassengerInfo()).to_tfs_passengers(),
+            )
             url = f"https://www.google.com/travel/flights/booking?tfs={tfs}"
         except Exception:
             logger.debug("build_flight_booking_url: tfs construction failed", exc_info=True)

@@ -31,6 +31,7 @@ Do not use that registry command before a release is announced here.
 glfi airports Jacksonville
 glfi JAX JFK 2026-10-15
 glfi flights JAX JFK 2026-10-15 --format json
+glfi JAX JFK 2026-10-15 --adults 2 --children 1
 glfi dates --help
 ```
 
@@ -38,6 +39,17 @@ Use future dates. Searches support one-way and round-trip itineraries, cabin,
 airline, airport, and stop filters. Run `glfi flights --help` for exact options.
 No Google API key is required. Availability and prices must be confirmed on
 the airline or booking site before purchasing.
+
+`flights` and `dates` accept `--passengers` (aliases `--adults`, `-p`),
+`--children`, `--infants-in-seat`, and `--infants-on-lap`. MCP flight/date/booking
+tools expose the corresponding `passengers`, `children`, `infants_in_seat`, and
+`infants_on_lap` fields. Per-itinerary flight booking links preserve both cabin
+and passenger mix. Generic search links, including date-result links, do not yet
+preserve cabin or passenger mix.
+
+Same-day validation uses a conservative `UTC today - 1 day` allowance because
+the dataset lacks airport time zones. This avoids rejecting evening departures
+west of UTC but can also permit a date that is already past locally.
 
 ## MCP
 
@@ -106,3 +118,4 @@ Historical API documentation under `docs/` may retain upstream names or describe
 capabilities that are currently unavailable. This README is the supported setup guide.
 
 See [RELEASING.md](RELEASING.md) for release gates and [NOTICE](NOTICE) for attribution.
+See [PRELAUNCH.md](PRELAUNCH.md) for completed fixes and the remaining backlog.

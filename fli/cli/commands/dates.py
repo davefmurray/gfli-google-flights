@@ -87,6 +87,8 @@ def dates(
         int,
         typer.Option(
             "--passengers",
+            "--adults",
+            "-p",
             help="Number of adult passengers",
             min=1,
         ),
@@ -537,6 +539,10 @@ def dates(
                         "trip_duration": trip_duration,
                         "is_round_trip": is_round_trip,
                         "cabin_class": cabin_class,
+                        "passengers": passengers,
+                        "children": children,
+                        "infants_in_seat": infants_in_seat,
+                        "infants_on_lap": infants_on_lap,
                         "max_stops": max_stops,
                         "departure_window": (
                             f"{departure_window[0]}-{departure_window[1]}"

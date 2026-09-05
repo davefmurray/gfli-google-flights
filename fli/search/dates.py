@@ -13,10 +13,16 @@ from pydantic import BaseModel
 
 from fli.core import extract_currency_from_price_token
 from fli.models import DateSearchFilters
-from fli.models.google_flights.base import TripType
+from fli.models.google_flights.base import TripType, earliest_searchable_date
 from fli.search._concurrency import parallel_map
 from fli.search._decoders import parse_flight_row
-from fli.search._tfs import build_tfs, extract_payload, page_url, unsupported_filters
+from fli.search._tfs import (
+    apply_client_side_filters,
+    build_tfs,
+    extract_payload,
+    page_url,
+    unsupported_filters,
+)
 from fli.search.client import get_client
 
 logger = logging.getLogger(__name__)
@@ -136,6 +142,9 @@ class SearchDates:
                     seat_type=filters.seat_type,
                     price_limit=filters.price_limit,
                     airlines=filters.airlines,
+                    airlines_exclude=filters.airlines_exclude,
+                    alliances=filters.alliances,
+                    alliances_exclude=filters.alliances_exclude,
                     max_duration=filters.max_duration,
                     layover_restrictions=filters.layover_restrictions,
                     emissions=filters.emissions,
@@ -223,7 +232,7 @@ class SearchDates:
         # A date sweep can straddle today, and past dates are simply not
         # bookable — skip them rather than letting the segment validator
         # abort the whole chunk.
-        if day.date() < datetime.now().date():
+        if day.date() < earliest_searchable_date():
             return None
 
         url = page_url(build_tfs(filters, travel_dates=travel_dates), currency, language, country)
@@ -237,15 +246,16 @@ class SearchDates:
         if payload is None:
             return None
 
-        prices = []
+        flights = []
         for index in (2, 3):
             if index < len(payload) and isinstance(payload[index], list):
                 for row in payload[index][0]:
                     try:
-                        prices.append(parse_flight_row(row).price)
+                        flights.append(parse_flight_row(row))
                     except (AttributeError, KeyError, ValueError, TypeError):
                         continue
-        prices = [p for p in prices if p]
+        flights = apply_client_side_filters(flights, filters)
+        prices = [flight.price for flight in flights if flight.price is not None]
         if not prices:
             return None
 

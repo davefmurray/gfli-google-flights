@@ -672,6 +672,7 @@ def _execute_flight_search(params: FlightSearchParams) -> dict[str, Any]:
                     language=params.language,
                     country=params.country,
                     seat_type=filters.seat_type,
+                    passenger_info=filters.passenger_info,
                 ),
             )
             for f in flights
@@ -760,6 +761,7 @@ def _execute_booking_options(
             language=params.language,
             country=params.country,
             seat_type=filters.seat_type,
+            passenger_info=filters.passenger_info,
         )
         serialized = [_serialize_booking_option(o) for o in options]
         result = {
@@ -1040,7 +1042,7 @@ def search_flights(
         cabin_class=cabin_class,
         max_stops=max_stops,
         sort_by=sort_by,
-        passengers=passengers or CONFIG.default_passengers,
+        passengers=CONFIG.default_passengers if passengers is None else passengers,
         children=children,
         infants_in_seat=infants_in_seat,
         infants_on_lap=infants_on_lap,
@@ -1185,7 +1187,7 @@ def search_dates(
         max_stops=max_stops,
         departure_window=effective_departure_window,
         sort_by_price=sort_by_price,
-        passengers=passengers or CONFIG.default_passengers,
+        passengers=CONFIG.default_passengers if passengers is None else passengers,
         currency=currency,
         language=language,
         country=country,
@@ -1254,6 +1256,9 @@ def get_booking_options(
         list[str] | None,
         Field(description="Filter by airline IATA codes (e.g., ['BA', 'AA'])"),
     ] = None,
+    children: Annotated[int, Field(description="Number of children", ge=0)] = 0,
+    infants_in_seat: Annotated[int, Field(description="Number of infants in seat", ge=0)] = 0,
+    infants_on_lap: Annotated[int, Field(description="Number of infants on lap", ge=0)] = 0,
     exclude_basic_economy: Annotated[
         bool,
         Field(description="Exclude basic economy fares from results"),
@@ -1339,8 +1344,11 @@ def get_booking_options(
         cabin_class=cabin_class,
         max_stops=max_stops,
         sort_by=sort_by,
-        passengers=passengers or CONFIG.default_passengers,
+        passengers=CONFIG.default_passengers if passengers is None else passengers,
         airlines=airlines,
+        children=children,
+        infants_in_seat=infants_in_seat,
+        infants_on_lap=infants_on_lap,
         exclude_basic_economy=exclude_basic_economy,
         emissions=emissions,
         checked_bags=checked_bags,

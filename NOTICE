@@ -10,5 +10,14 @@ This baseline incorporates upstream contributions with their Git history:
 - PR #231: preserve cabin class in booking deep links.
 - PR #232: decode legroom independently of Wi-Fi tier.
 
+Pre-launch work also incorporates:
+- PR #160: disambiguate enum names; GLFI regenerates and tests the shipped data.
+- PR #215: same-day date validation and actionable MCP validation errors.
+- PR #103: adult, child, and infant controls in CLI and MCP.
+
+GLFI additionally applies the patched curl-cffi dependency floor described in
+PR #193, preserves party size in flight booking links and MCP booking tools,
+and repairs same-day and filter handling in the public-page date-scan transport.
+
 GLFI is not affiliated with or endorsed by Google. It uses unofficial,
 reverse-engineered Google Flights endpoints, which may change or stop working.

@@ -51,9 +51,6 @@ _DS_BLOB = re.compile(r"AF_initDataCallback\((\{.*?\})\);", re.S)
 _DS_KEY = re.compile(r"key:\s*'([^']+)'")
 _DS_DATA = re.compile(r"data:(.*?), sideChannel", re.S)
 
-# Passenger kinds, in the order Google's repeated field 8 expects them.
-_PASSENGER_FIELDS = ("adults", "children", "infants_in_seat", "infants_on_lap")
-
 # Filters with no ``tfs`` encoding and no reliable post-hoc equivalent —
 # the decoded rows don't carry the data needed to apply them locally.
 _UNSUPPORTED = (
@@ -116,11 +113,7 @@ def build_tfs(filters: Any, *, travel_dates: list[str] | None = None) -> str:
         )
 
     stops = filters.stops.value
-    passengers = [
-        code
-        for kind, code in zip(_PASSENGER_FIELDS, (1, 2, 3, 4), strict=False)
-        for _ in range(getattr(filters.passenger_info, kind, 0))
-    ]
+    passengers = filters.passenger_info.to_tfs_passengers()
 
     # Google reads alliances out of the same carrier lists as airline codes.
     carriers = [a.value for a in (getattr(filters, "alliances", None) or [])]

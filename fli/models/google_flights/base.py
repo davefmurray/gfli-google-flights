@@ -196,6 +196,15 @@ class PassengerInfo(BaseModel):
     infants_in_seat: NonNegativeInt = 0
     infants_on_lap: NonNegativeInt = 0
 
+    def to_tfs_passengers(self) -> list[int]:
+        """Return one Google tfs passenger-type code per traveler."""
+        return (
+            [1] * self.adults
+            + [2] * self.children
+            + [3] * self.infants_in_seat
+            + [4] * self.infants_on_lap
+        )
+
 
 class PriceLimit(BaseModel):
     """Maximum price constraint for flight search."""

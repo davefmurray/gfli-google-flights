@@ -6,6 +6,8 @@ from unittest.mock import MagicMock
 from fli.mcp.server import (
     DateSearchParams,
     FlightSearchParams,
+    search_dates,
+    search_flights,
 )
 from fli.mcp.server import (
     _search_dates_from_params as search_dates_fn,

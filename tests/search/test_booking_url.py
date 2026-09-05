@@ -9,7 +9,7 @@ import urllib.parse
 from datetime import datetime, timezone
 from unittest.mock import MagicMock
 
-from fli.models import Airline, Airport, FlightLeg, FlightResult, SeatType
+from fli.models import Airline, Airport, FlightLeg, FlightResult, PassengerInfo, SeatType
 from fli.search.flights import SearchFlights
 
 # ---------------------------------------------------------------------------
@@ -261,3 +261,17 @@ class TestBuildFlightBookingUrl:
         business = _raw(business_url)
         assert b"\x40\x01\x48\x03\x70\x01" in business
         assert b"\x40\x01\x48\x01\x70\x01" not in business
+
+    def test_family_and_cabin_preserved_together(self):
+        import base64
+
+        party = PassengerInfo(adults=2, children=1, infants_in_seat=1, infants_on_lap=1)
+        url = _make_client().build_flight_booking_url(
+            _one_way(),
+            seat_type=SeatType.BUSINESS,
+            passenger_info=party,
+        )
+        token = urllib.parse.parse_qs(urllib.parse.urlparse(url).query)["tfs"][0]
+        raw = base64.urlsafe_b64decode(token + "=" * (-len(token) % 4))
+        # Repeated field 8: two adults, child, seated infant, lap infant; field 9: business.
+        assert b"\x40\x01\x40\x01\x40\x02\x40\x03\x40\x04\x48\x03\x70\x01" in raw
