@@ -21,6 +21,7 @@ from fli.search.exceptions import (
     SearchConnectionError,
     SearchHTTPError,
     SearchTimeoutError,
+    search_error_type,
 )
 
 _LOG_DIR = Path.home() / ".glfi" / "logs"
@@ -90,12 +91,6 @@ def report_cli_error(
 def json_error_payload(exc: BaseException, *, command: str | None = None) -> tuple[str, str, Path]:
     """Return ``(message, error_type, log_path)`` for JSON-mode error output."""
     log_path = _write_log(exc, command=command)
-    if isinstance(exc, SearchTimeoutError):
-        return str(exc), "timeout", log_path
-    if isinstance(exc, SearchConnectionError):
-        return str(exc), "connection_error", log_path
-    if isinstance(exc, SearchHTTPError):
-        return str(exc), "http_error", log_path
     if isinstance(exc, SearchClientError):
-        return str(exc), "search_error", log_path
+        return str(exc), search_error_type(exc), log_path
     return f"{exc.__class__.__name__}: {exc}", "unexpected_error", log_path

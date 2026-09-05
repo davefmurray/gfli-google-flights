@@ -27,13 +27,11 @@ The earlier baseline already incorporated #230, #231, and #232.
 
 ## Remaining Before A Release Decision
 
-The remaining work is roughly two batches: search reliability/Explore evaluation,
-then release hardening. Provider-blocked features and TypeScript parity are not
+The remaining work is roughly one batch: release hardening.
+Provider-blocked features and TypeScript parity are not
 automatically part of the first release.
 
-- Explore search (#226), subject to fresh live transport verification.
-- Remaining amenities mapping (#217) and provider error/empty-result distinctions.
-- Round-trip completeness: only five outbound candidates are expanded by default (#142).
+- Explore (#226) remains deferred after the blocked live evaluation below.
 - Unsupported baggage/emissions/basic-economy options still warn rather than enforce.
 - Multi-city, booking-price RPC, and reseller lookup remain provider limitations.
 - TypeScript public-page search transport is not ported; npm publishing stays disabled.
@@ -58,7 +56,7 @@ automatically part of the first release.
   cabin, dates, and airport sets. They do not claim to preserve client-only filters.
 - **Date transport:** return-time-constrained dates expand actual return options
   from the five cheapest outbound candidates and quote complete itinerary prices.
-  This fixes enforcement of the new control but does not resolve #142 completeness.
+  Batch three below removes that five-candidate cutoff.
 - **Selected fares:** CLI text/JSON and MCP now show the selected return's complete
   quote rather than the outbound starting fare. Cheapest ordering uses final fares;
   unknown final fares are not replaced with a misleading starting price.
@@ -70,7 +68,52 @@ These are GLFI adaptations of proposals #195/#196/#199, not merges of their PR
 heads. The upstream return-time sentinel design is retained with attribution in
 NOTICE; duration execution is adapted to the current public-page transport.
 
+## Completed In The Third Batch
+
+- **Provider reliability:** shared strict search-board decoding for flights and
+  dates. Malformed pages and even partially undecodable boards raise typed errors.
+  A failed date fails the scan rather than disappearing from apparently complete
+  results. Matching flights without usable date prices raise `price_unavailable`.
+  Valid empty boards still produce normal empty results.
+- **CLI/MCP parity:** stable error categories distinguish timeout, connection,
+  HTTP, parse, rejected-provider, unavailable-price, and unsupported-search errors.
+  Booking RPC framing now rejects malformed/truncated streams; failed fresh
+  searches cannot reuse a previous booking session.
+- **#142 cutoff:** round trips now expand every decoded outbound by default,
+  including return-time-constrained date scans. An explicit Python `top_n` cap
+  must be positive and warns when incomplete. This increases request counts and
+  does not guarantee complete market inventory beyond Google's supplied board.
+- **#217 amenities:** corrected numeric amenity flags, Wi-Fi tiers, all six power
+  types, and video-type precedence. New optional labels supplement boolean fields.
+  Seat quality remains a separate raw code, never inferred from Wi-Fi.
+- **#226 evaluated, not integrated:** tested upstream head `0567a3a` with its
+  baseline request, Referer/service parameters, and public-page priming. JAX and
+  LHR probes still returned HTTP 200 with provider error 13, not empty destinations.
+  Explore remains unavailable; its CLI/MCP tools are not advertised or shipped.
+
+Repeat the bounded transport diagnostic with a future date:
+
+```sh
+uv run python scripts/probe_explore.py JAX 2026-10-15 --extended
+```
+
+Default mode makes one POST; extended mode makes three POSTs and one priming GET,
+subject to the shared client's retries. Output contains sanitized status/category
+only. Nonzero exit means every variant failed. Even parseable payloads would still
+require destination decoding and end-to-end verification before integrating Explore.
+
 ## Verification
+
+Third-batch checks on 2026-09-05: all 951 offline Python tests passed on 3.10,
+3.11, and 3.13 with the Makefile's terminal environment. Ruff lint/formatting,
+wheel/sdist builds, and Twine checks passed. Live JAX to JFK/LGA (2026-10-15
+outbound, 2026-10-19 return, two adults and one child) returned six itineraries
+with morning outbound/evening return departures and sorted selected fares. The
+same constrained 3-4 day flexible scan returned both date pairs. Installed
+FastMCP 4.0.3 stdio returned a live SFO-JFK search with amenity labels; all four
+tool names, localhost HTTP health, and HTTP tool listing passed. No servers left
+running. Explore's three probe variants all returned error 13; not integrated.
+TypeScript was unchanged and not rerun; Docker remains unavailable/unverified.
 
 Second-batch checks on 2026-09-05: all 873 offline Python tests passed on 3.10,
 3.11, and 3.13. Ruff lint/formatting, wheel/sdist builds, and Twine checks passed.

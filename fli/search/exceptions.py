@@ -21,6 +21,33 @@ class SearchConnectionError(SearchClientError):
     """A network/DNS issue prevented us from reaching Google Flights."""
 
 
+class SearchParseError(SearchClientError):
+    """Google responded, but its result payload could not be decoded reliably."""
+
+
+class SearchPriceUnavailableError(SearchClientError):
+    """Matching flights exist, but Google did not provide a usable price."""
+
+
+def search_error_type(exc: SearchClientError) -> str:
+    """Stable categories shared by CLI JSON and MCP responses."""
+    if isinstance(exc, SearchTimeoutError):
+        return "timeout"
+    if isinstance(exc, SearchConnectionError):
+        return "connection_error"
+    if isinstance(exc, SearchHTTPError):
+        return "http_error"
+    if isinstance(exc, SearchParseError):
+        return "parse_error"
+    if isinstance(exc, SearchPriceUnavailableError):
+        return "price_unavailable"
+    if isinstance(exc, SearchRejectedError):
+        return "provider_rejected"
+    if isinstance(exc, SearchUnsupportedError):
+        return "unsupported_search"
+    return "search_error"
+
+
 class SearchHTTPError(SearchClientError):
     """Google Flights returned a non-2xx HTTP response."""
 
@@ -47,8 +74,8 @@ class SearchRejectedError(SearchClientError):
         suffix = f" (error {code})" if code is not None else ""
         super().__init__(
             f"Google Flights declined the request{suffix} and returned no data. "
-            "Its API now requires a browser-signed x-goog-batchexecute-bgr header, "
-            "which this client cannot produce. See github.com/punitarani/fli#223."
+            "The endpoint may require browser state or request signing, or its "
+            "request format may have changed. This is not an empty search result."
         )
 
 

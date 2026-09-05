@@ -153,10 +153,11 @@ class TestParseFlightsDataNonStop:
         assert am.power is True
         assert am.on_demand_video is True
         assert am.legroom_rating == 3
-        # USB/in-seat-video slots not yet disambiguated — left as None to
-        # avoid lying about what we know.
-        assert am.usb_power is None
-        assert am.in_seat_video is None
+        assert am.usb_power is True
+        assert am.in_seat_video is True
+        assert am.wifi_type == "free"
+        assert am.power_type == "plug_usb"
+        assert am.video_type == "on_demand"
 
     def test_result_emissions(self):
         assert self.flight.co2_emissions_g == 225000

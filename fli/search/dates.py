@@ -15,7 +15,7 @@ from fli.core import extract_currency_from_price_token
 from fli.models import DateSearchFilters, FlightSearchFilters
 from fli.models.google_flights.base import SortBy, TripType, earliest_searchable_date
 from fli.search._concurrency import parallel_map
-from fli.search._decoders import parse_flight_row
+from fli.search._decoders import parse_search_payload
 from fli.search._tfs import (
     apply_client_side_filters,
     build_tfs,
@@ -24,6 +24,7 @@ from fli.search._tfs import (
     unsupported_filters,
 )
 from fli.search.client import get_client
+from fli.search.exceptions import SearchParseError, SearchPriceUnavailableError
 
 logger = logging.getLogger(__name__)
 
@@ -287,6 +288,10 @@ class SearchDates:
                 for trip in itineraries or []
                 if isinstance(trip, tuple) and trip[-1].price is not None
             ]
+            if itineraries and not prices:
+                raise SearchPriceUnavailableError(
+                    f"Flights found for {travel_dates}, but Google returned no prices"
+                )
             return (
                 DatePrice(date=tuple(dates), price=min(prices), currency=currency)
                 if prices
@@ -294,26 +299,22 @@ class SearchDates:
             )
 
         url = page_url(build_tfs(filters, travel_dates=travel_dates), currency, language, country)
-        try:
-            response = self.client.get(url, impersonate="chrome", allow_redirects=True)
-            response.raise_for_status()
-            payload = extract_payload(response.text)
-        except Exception:  # noqa: BLE001 — one bad date must not sink the sweep
-            logger.warning("Pricing %s failed", travel_dates[0], exc_info=True)
-            return None
+        response = self.client.get(url, impersonate="chrome", allow_redirects=True)
+        response.raise_for_status()
+        payload = extract_payload(response.text)
         if payload is None:
-            return None
+            raise SearchParseError(
+                f"Search page for {travel_dates[0]} carried no ds:1 payload; "
+                "Google may have returned a consent/blocked page or changed the format"
+            )
 
-        flights = []
-        for index in (2, 3):
-            if index < len(payload) and isinstance(payload[index], list):
-                for row in payload[index][0]:
-                    try:
-                        flights.append(parse_flight_row(row))
-                    except (AttributeError, KeyError, ValueError, TypeError):
-                        continue
+        flights = parse_search_payload(payload)
         flights = apply_client_side_filters(flights, filters)
         prices = [flight.price for flight in flights if flight.price is not None]
+        if flights and not prices:
+            raise SearchPriceUnavailableError(
+                f"Flights found for {travel_dates}, but Google returned no prices"
+            )
         if not prices:
             return None
 

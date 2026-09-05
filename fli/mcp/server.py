@@ -42,6 +42,7 @@ from fli.models import (
     TripType,
 )
 from fli.search import SearchDates, SearchFlights
+from fli.search.exceptions import SearchClientError, search_error_type
 from fli.search.links import search_url
 
 
@@ -715,6 +716,13 @@ def _execute_flight_search(params: FlightSearchParams) -> dict[str, Any]:
         return {"success": False, "error": str(e), "flights": []}
     except ValidationError as e:
         return {"success": False, "error": _format_validation_error(e), "flights": []}
+    except SearchClientError as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "error_type": search_error_type(e),
+            "flights": [],
+        }
     except Exception as e:
         return {"success": False, "error": f"Search failed: {e}", "flights": []}
 
@@ -812,6 +820,13 @@ def _execute_booking_options(
         return {"success": False, "error": str(e), "options": []}
     except ValidationError as e:
         return {"success": False, "error": _format_validation_error(e), "options": []}
+    except SearchClientError as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "error_type": search_error_type(e),
+            "options": [],
+        }
     except Exception as e:
         return {"success": False, "error": f"Booking lookup failed: {e}", "options": []}
 
@@ -931,6 +946,8 @@ def _execute_date_search(params: DateSearchParams) -> dict[str, Any]:
         return {"success": False, "error": str(e), "dates": []}
     except ValidationError as e:
         return {"success": False, "error": _format_validation_error(e), "dates": []}
+    except SearchClientError as e:
+        return {"success": False, "error": str(e), "error_type": search_error_type(e), "dates": []}
     except Exception as e:
         return {"success": False, "error": f"Search failed: {str(e)}", "dates": []}
 

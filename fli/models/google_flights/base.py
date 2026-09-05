@@ -6,6 +6,7 @@ Models are designed to match Google Flights' APIs while providing a clean python
 
 from datetime import date, datetime, timedelta, timezone
 from enum import Enum
+from typing import Literal
 
 from pydantic import (
     BaseModel,
@@ -256,6 +257,14 @@ class Amenities(BaseModel):
     in_seat_video: bool | None = None
     on_demand_video: bool | None = None
     legroom_rating: NonNegativeInt | None = None
+    wifi_type: Literal["free", "paid", "available"] | None = None
+    power_type: (
+        Literal[
+            "plug_usb", "some_seats_plug_usb", "plug", "some_seats_plug", "usb", "some_seats_usb"
+        ]
+        | None
+    ) = None
+    video_type: Literal["streaming", "on_demand", "live_tv"] | None = None
 
 
 class Layover(BaseModel):

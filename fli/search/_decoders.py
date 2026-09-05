@@ -27,12 +27,46 @@ from fli.models import (
     Layover,
 )
 from fli.search._helpers import as_bool, as_int, as_non_negative_int, as_str, safe_get
+from fli.search.exceptions import SearchParseError
 
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Flight result decoding
 # ---------------------------------------------------------------------------
+
+
+def parse_search_payload(payload: Any) -> list[FlightResult]:
+    """Decode a search board without treating a broken payload as an empty route."""
+    if not isinstance(payload, list) or len(payload) < 4:
+        raise SearchParseError("Shopping response shape changed: no flights array at [2]/[3]")
+    rows = []
+    for index in (2, 3):
+        group = payload[index]
+        if group is None:
+            continue
+        if not isinstance(group, list) or not group or not isinstance(group[0], list):
+            raise SearchParseError(
+                f"Shopping response shape changed: invalid flights array at [{index}]"
+            )
+        rows.extend(group[0])
+    flights = []
+    failures = []
+    for row in rows:
+        try:
+            flights.append(parse_flight_row(row))
+        except (AttributeError, IndexError, KeyError, ValueError, TypeError) as exc:
+            reason = f"{type(exc).__name__}: {exc}"
+            if reason not in failures and len(failures) < 3:
+                failures.append(reason)
+    if failures:
+        # Returning the surviving subset would hide incomplete coverage and could
+        # turn a decoder regression into an apparently trustworthy cheapest fare.
+        raise SearchParseError(
+            f"Parsed {len(flights)}/{len(rows)} flight rows; response is incomplete "
+            f"(sample reasons: {'; '.join(failures)})"
+        )
+    return flights
 
 
 def parse_flight_row(row: list) -> FlightResult:
@@ -47,6 +81,8 @@ def parse_flight_row(row: list) -> FlightResult:
     price, currency = _parse_price_info(row)
 
     raw_legs = detail[2] or []
+    if not raw_legs:
+        raise ValueError("Flight row has no legs")
     legs = [_parse_leg(fl) for fl in raw_legs]
     layovers = _derive_layovers(legs, safe_get(detail, 13)) if len(legs) > 1 else None
 
@@ -121,19 +157,48 @@ def _parse_amenities(slots: Any, seat_quality: Any = None) -> Amenities | None:
 
     Return None when neither source carries a usable value.
     """
-    wifi = as_bool(safe_get(slots, 1))
-    power = as_bool(safe_get(slots, 5))
-    on_demand_video = as_bool(safe_get(slots, 9))
+
+    def flag(value: Any) -> bool | None:
+        # Unlike other tri-state fields, amenity flags arrive as numeric 0/1.
+        return bool(value) if isinstance(value, int) and value in (0, 1) else None
+
+    wifi_tier = as_non_negative_int(safe_get(slots, 11))
+    wifi = bool(wifi_tier) if wifi_tier is not None else None
+    wifi_type = {2: "free", 3: "paid"}.get(wifi_tier, "available" if wifi else None)
+    power_signals = [flag(safe_get(slots, i)) for i in range(1, 7)]
+    power_index = next((i for i, value in enumerate(power_signals) if value), None)
+    power_types = (
+        "plug_usb",
+        "some_seats_plug_usb",
+        "plug",
+        "some_seats_plug",
+        "usb",
+        "some_seats_usb",
+    )
+    power_type = power_types[power_index] if power_index is not None else None
+    power = True if power_type else (False if any(v is not None for v in power_signals) else None)
+    usb_power = power_index in (0, 1, 4, 5) if power_type else power
+    video_signals = [flag(safe_get(slots, i)) for i in (10, 9, 8)]
+    video_index = next((i for i, value in enumerate(video_signals) if value), None)
+    video_type = (
+        ("streaming", "on_demand", "live_tv")[video_index] if video_index is not None else None
+    )
+    video_known = video_type is not None or any(v is not None for v in video_signals)
+    on_demand_video = video_type == "on_demand" if video_known else None
+    in_seat_video = video_type in ("on_demand", "live_tv") if video_known else None
     legroom_rating = as_non_negative_int(seat_quality)
     if wifi is None and power is None and on_demand_video is None and legroom_rating is None:
         return None
     return Amenities(
         wifi=wifi,
         power=power,
-        usb_power=None,
-        in_seat_video=None,
+        usb_power=usb_power,
+        in_seat_video=in_seat_video,
         on_demand_video=on_demand_video,
         legroom_rating=legroom_rating,
+        wifi_type=wifi_type,
+        power_type=power_type,
+        video_type=video_type,
     )
 
 

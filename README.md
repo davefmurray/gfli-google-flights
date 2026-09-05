@@ -68,6 +68,24 @@ Round-trip flight results quote the selected return option's complete itinerary
 fare, not the outbound board's starting fare and not the sum of both quotes.
 An unavailable selected fare remains unknown.
 
+Round trips expand every decoded outbound candidate by default, including in
+return-time-constrained date scans. Python callers can explicitly pass
+`top_n=N` to trade coverage for fewer requests; skipping candidates emits a warning.
+This removes GLFI's former five-outbound cutoff, not Google's own inventory limits.
+
+Flight-leg amenities include `wifi_type` (free/paid/available), `power_type`, and
+`video_type` alongside the existing boolean fields. Missing provider information
+remains unknown. `legroom_rating` is Google's raw seat-quality code, not an ordered
+comfort score or the Wi-Fi tier.
+
+Provider failures are not empty searches. CLI JSON reports `success: false` with
+`error.type`; MCP uses `success: false` with `error_type`. Categories include
+`timeout`, `connection_error`, `http_error`, `parse_error`, `provider_rejected`,
+`price_unavailable`, and `unsupported_search`. Malformed or partially undecodable
+boards fail instead of returning a misleading subset. A date scan fails if any
+date request fails, or matching flights have no usable prices; valid empty days
+are still omitted normally.
+
 Same-day validation uses a conservative `UTC today - 1 day` allowance because
 the dataset lacks airport time zones. This avoids rejecting evening departures
 west of UTC but can also permit a date that is already past locally.
@@ -117,9 +135,12 @@ docker compose up --build
   the required results. Returning only the first leg would be misleading.
 - Booking-price lookup still depends on a Google RPC that can reject requests.
   Google Flights deep links are available and preserve the requested cabin.
+- Explore is not available. Upstream PR #226's endpoint returned provider error
+  13 in live checks; no Explore CLI command or MCP tool is shipped.
 - Date scans make a search request per date/stay combination. Return-time filters
-  require additional return searches for up to five outbound candidates per pair.
-  Prices are the cheapest among the candidates checked, not an exhaustive guarantee.
+  require additional return searches for every decoded outbound candidate per pair.
+  Without a return-time constraint, date prices remain outbound-board starting quotes.
+  Prices are the cheapest published among candidates checked, not an exhaustive guarantee.
   Start with a short range; the 366-combination limit is not a 366-request limit.
 - Some passenger combinations, particularly infants, may produce no inline results.
 - The inherited TypeScript library in `fli-js/` has not received the Python

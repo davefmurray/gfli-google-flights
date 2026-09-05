@@ -29,14 +29,17 @@ import logging
 from collections.abc import Iterator
 from typing import Any
 
+from fli.search.exceptions import SearchParseError
+
 logger = logging.getLogger(__name__)
 
 _PREFIX = b")]}'"
 
 
-def iter_wrb_chunks(body: str | bytes) -> Iterator[Any]:
+def iter_wrb_chunks(body: str | bytes, *, strict: bool = False) -> Iterator[Any]:
     """Yield the inner JSON object of every ``wrb.fr`` chunk in ``body``.
 
+    Strict mode raises on malformed/truncated framing instead of dropping data.
     Robust to single-chunk responses with no length headers (the older
     ``GetShoppingResults`` / ``GetCalendarGraph`` shape) — those are parsed
     by falling back to a single JSON load over the trimmed body.
@@ -52,16 +55,20 @@ def iter_wrb_chunks(body: str | bytes) -> Iterator[Any]:
     raw = raw.lstrip()
 
     if not raw:
+        if strict:
+            raise SearchParseError("Empty RPC response")
         return
 
     # Fast path: no length headers (legacy single-chunk responses).
     if not (b"0" <= raw[:1] <= b"9"):
         try:
             outer = json.loads(raw.decode("utf-8"))
-        except (ValueError, json.JSONDecodeError, UnicodeDecodeError):
+        except (ValueError, json.JSONDecodeError, UnicodeDecodeError) as exc:
+            if strict:
+                raise SearchParseError("Malformed RPC JSON response") from exc
             logger.warning("Failed to decode single-chunk wrb.fr body as JSON", exc_info=True)
             return
-        yield from _chunks_from_outer(outer)
+        yield from _chunks_from_outer(outer, strict=strict)
         return
 
     cursor = 0
@@ -69,10 +76,14 @@ def iter_wrb_chunks(body: str | bytes) -> Iterator[Any]:
         # Read the decimal length prefix terminated by \n.
         end = raw.find(b"\n", cursor)
         if end == -1:
+            if strict and raw[cursor:].strip():
+                raise SearchParseError("Truncated RPC length header")
             break
         try:
             length = int(raw[cursor:end])
-        except ValueError:
+        except ValueError as exc:
+            if strict:
+                raise SearchParseError("Malformed RPC length header") from exc
             logger.warning(
                 "Malformed length header at offset %d; truncating chunk stream",
                 cursor,
@@ -83,23 +94,31 @@ def iter_wrb_chunks(body: str | bytes) -> Iterator[Any]:
         # We've already consumed the leading newline (it terminated the header),
         # so we read `length - 1` bytes which gives JSON + trailing \n.
         cursor = end + 1
+        if strict and (length < 2 or cursor + length - 1 > len(raw)):
+            raise SearchParseError("Truncated or invalid RPC frame length")
         chunk_bytes = max(length - 1, 0)
         payload = raw[cursor : cursor + chunk_bytes]
         cursor += chunk_bytes
         try:
             outer = json.loads(payload.strip().decode("utf-8"))
-        except (ValueError, json.JSONDecodeError, UnicodeDecodeError):
+        except (ValueError, json.JSONDecodeError, UnicodeDecodeError) as exc:
+            if strict:
+                raise SearchParseError("Malformed RPC frame JSON") from exc
             logger.warning("Discarding malformed wrb.fr chunk", exc_info=True)
             continue
-        yield from _chunks_from_outer(outer)
+        yield from _chunks_from_outer(outer, strict=strict)
 
 
-def _chunks_from_outer(outer: Any) -> Iterator[Any]:
+def _chunks_from_outer(outer: Any, *, strict: bool = False) -> Iterator[Any]:
     """Walk a top-level chunk list and yield decoded inner-JSON payloads."""
     if not isinstance(outer, list):
+        if strict:
+            raise SearchParseError("RPC envelope must be a list")
         return
     for row in outer:
         if not isinstance(row, list) or len(row) < 3:
+            if strict and isinstance(row, list) and row and row[0] == "wrb.fr":
+                raise SearchParseError("Truncated RPC result row")
             continue
         if row[0] != "wrb.fr":
             continue
@@ -113,10 +132,14 @@ def _chunks_from_outer(outer: Any) -> Iterator[Any]:
                 from fli.search.exceptions import SearchRejectedError
 
                 raise SearchRejectedError(code)
+            if strict:
+                raise SearchParseError("RPC result is missing its payload")
             continue
         try:
             yield json.loads(inner)
-        except (ValueError, json.JSONDecodeError):
+        except (ValueError, json.JSONDecodeError) as exc:
+            if strict:
+                raise SearchParseError("Malformed RPC result payload") from exc
             logger.warning("Failed to decode wrb.fr inner JSON payload", exc_info=True)
             continue
 

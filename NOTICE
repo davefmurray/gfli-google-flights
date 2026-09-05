@@ -29,5 +29,12 @@ integration, and nested-worker deadlock prevention for the current transport.
 Selected-return fares also replace outbound starting fares in round-trip output
 and cheapest-result ordering.
 
+The third pre-launch batch uses the amenity slot mapping documented in upstream
+issue #217, adds provider error reporting and strict decoding, and removes the
+default five-outbound round-trip cap discussed in issue #142.
+scripts/probe_explore.py adapts only the diagnostic request shape from PR #226
+(0567a3a). That PR is not merged; Explore transport remains blocked in live tests
+and no Explore library, CLI, or MCP feature is shipped.
+
 GLFI is not affiliated with or endorsed by Google. It uses unofficial,
 reverse-engineered Google Flights endpoints, which may change or stop working.

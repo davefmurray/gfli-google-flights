@@ -3,6 +3,8 @@ from .exceptions import (
     SearchClientError,
     SearchConnectionError,
     SearchHTTPError,
+    SearchParseError,
+    SearchPriceUnavailableError,
     SearchTimeoutError,
 )
 from .flights import SearchFlights
@@ -15,4 +17,6 @@ __all__ = [
     "SearchTimeoutError",
     "SearchConnectionError",
     "SearchHTTPError",
+    "SearchParseError",
+    "SearchPriceUnavailableError",
 ]

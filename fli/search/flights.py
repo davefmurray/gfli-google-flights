@@ -28,6 +28,7 @@ from fli.search._decoders import (
     _try_parse_booking_row,  # noqa: F401 — back-compat re-export for tests
     parse_booking_chunk,
     parse_flight_row,
+    parse_search_payload,
 )
 from fli.search._tfs import (
     apply_client_side_filters,
@@ -40,17 +41,9 @@ from fli.search._urls import with_locale_params
 from fli.search._urls import with_locale_params as _with_locale_params  # noqa: F401
 from fli.search._wire import iter_wrb_chunks
 from fli.search.client import get_client
+from fli.search.exceptions import SearchParseError
 
 logger = logging.getLogger(__name__)
-
-
-class SearchParseError(Exception):
-    """Raised when a successful HTTP response cannot be parsed into flights.
-
-    Distinct from network / HTTP errors raised by the underlying client —
-    use this to tell "Google responded but the shape changed" apart from
-    "Google didn't respond at all".
-    """
 
 
 def _sort_key(sort_by: SortBy) -> Callable[[FlightResult], Any]:
@@ -126,7 +119,7 @@ class SearchFlights:
     def search(
         self,
         filters: FlightSearchFilters,
-        top_n: int = 5,
+        top_n: int | None = None,
         currency: str | None = None,
         language: str | None = None,
         country: str | None = None,
@@ -135,8 +128,9 @@ class SearchFlights:
 
         Args:
             filters: Full search descriptor (airports, dates, preferences).
-            top_n: Number of outbound options to expand when chasing a
-                round-trip or multi-city itinerary.
+            top_n: Optional positive cap on outbound expansion. None (default)
+                expands every decoded outbound candidate. An explicit cap is
+                incomplete and emits a warning when candidates are skipped.
             currency: Optional ISO 4217 currency code (``curr`` URL param).
             language: Optional BCP-47 language code (``hl`` URL param).
             country: Optional ISO 3166-1 alpha-2 country code (``gl`` URL param).
@@ -151,6 +145,9 @@ class SearchFlights:
             Exception: HTTP failure or unparseable response.
 
         """
+        if top_n is not None and (type(top_n) is not int or top_n < 1):
+            raise ValueError("top_n must be a positive integer or None for all candidates")
+        self._last_session_id = None
         flights = self._fetch_flights(
             filters,
             currency=currency,
@@ -208,47 +205,9 @@ class SearchFlights:
                 "the page shape, or served a consent/blocked page instead."
             )
 
+        flights = parse_search_payload(inner)
         if capture_session:
             self._capture_session_id(inner)
-
-        try:
-            flights_raw = [
-                item for i in (2, 3) if isinstance(inner[i], list) for item in inner[i][0]
-            ]
-        except (IndexError, TypeError) as e:
-            raise SearchParseError(
-                f"Shopping response shape changed — no flights array at inner[2]/[3]: {e}"
-            ) from e
-
-        flights: list[FlightResult] = []
-        # Bounded ring of unique failure reasons — we only surface the
-        # first few in the SearchParseError below, and Google's response
-        # rarely tops 100 rows, but capping at construction keeps memory
-        # constant regardless of how large a future response gets.
-        failure_samples: list[str] = []
-        any_failure = False
-        for row in flights_raw:
-            try:
-                flights.append(parse_flight_row(row))
-            except (AttributeError, KeyError, ValueError, TypeError) as e:
-                reason = f"{type(e).__name__}: {e}"
-                any_failure = True
-                if reason not in failure_samples and len(failure_samples) < 3:
-                    failure_samples.append(reason)
-                logger.debug("Skipping flight with unparseable data: %s", reason)
-
-        if flights_raw and any_failure and not flights:
-            # Every row failed to parse — likely a wire-format change.
-            # Surface the failure reasons so the error isn't blindly
-            # blamed on "shape change" when the cause is something else
-            # (e.g. all rows hit a known structural quirk we haven't yet
-            # handled in the decoder).
-            sample = "; ".join(failure_samples)
-            raise SearchParseError(
-                f"Parsed 0/{len(flights_raw)} flight rows — "
-                f"Google response shape may have changed (sample reasons: {sample})"
-            )
-
         flights = apply_client_side_filters(flights, filters)
         flights.sort(key=_sort_key(filters.sort_by))
         return flights or None
@@ -376,9 +335,9 @@ class SearchFlights:
         # parsing so we can parse them in parallel — each chunk is a few
         # hundred KB of pure-Python tree walking, GIL-bound but cheap to
         # overlap with the next chunk's JSON decode (which releases the GIL).
-        chunks = list(iter_wrb_chunks(response.text))
+        chunks = list(iter_wrb_chunks(response.text, strict=True))
         if not chunks:
-            return []
+            raise SearchParseError("Booking response contained no result payloads")
         parsed = parallel_map(parse_booking_chunk, chunks)
         options: list[BookingOption] = []
         for chunk_options in parsed:
@@ -495,7 +454,7 @@ class SearchFlights:
         flights: list[FlightResult],
         filters: FlightSearchFilters,
         *,
-        top_n: int,
+        top_n: int | None,
         currency: str | None,
         language: str | None,
         country: str | None,
@@ -528,6 +487,12 @@ class SearchFlights:
         # a pure FlightResult → list[FlightResult|tuple] mapping with no
         # mutable shared state.
         candidates = list(flights[:top_n])
+        if top_n is not None and len(candidates) < len(flights):
+            logger.warning(
+                "Incomplete round-trip search: expanding %s of %s outbound candidates (top_n)",
+                len(candidates),
+                len(flights),
+            )
 
         def expand(outbound: FlightResult):
             next_filters = deepcopy(filters)

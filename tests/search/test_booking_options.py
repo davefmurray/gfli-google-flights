@@ -157,8 +157,8 @@ class TestGetBookingOptionsPriceless:
                 "R",
                 (),
                 {
-                    "content": b")]}'\n\n4\n[[]]\n",
-                    "text": ")]}'\n\n4\n[[]]\n",
+                    "content": json.dumps([["wrb.fr", None, "[]"]]).encode(),
+                    "text": json.dumps([["wrb.fr", None, "[]"]]),
                     "raise_for_status": lambda self: None,
                 },
             )()
@@ -223,13 +223,8 @@ class TestGetBookingOptionsErrorPaths:
         with pytest.raises(ValueError, match="3 segments but filters has 2"):
             sf.get_booking_options(oversized, filters)
 
-    def test_malformed_body_returns_empty_options(self):
-        """Garbage body still allows the call to complete with an empty list.
-
-        This is the documented contract — the wire parser yields zero
-        chunks for unrecognised bodies, so callers get ``[]`` rather than
-        an exception when Google reshapes the response.
-        """
+    def test_malformed_body_raises_parse_error(self):
+        """A broken booking response must not masquerade as no vendors."""
         from unittest.mock import patch
 
         sf = SearchFlights()
@@ -248,9 +243,11 @@ class TestGetBookingOptionsErrorPaths:
                 },
             )()
 
+        from fli.search.exceptions import SearchParseError
+
         with patch.object(sf.client, "post", side_effect=_fake_post):
-            opts = sf.get_booking_options(flight, filters, currency="USD")
-        assert opts == []
+            with pytest.raises(SearchParseError):
+                sf.get_booking_options(flight, filters, currency="USD")
 
 
 class TestEncodeBookingPayloadValidation:
@@ -288,17 +285,7 @@ class TestGetBookingOptionsSessionCaching:
             [None, None, None, None, "HCAPTUREDSESSIONID----123ABC"],
             None,
             None,
-            [
-                [
-                    [
-                        [None] * 25 + [None],  # detail block (unused)
-                    ]
-                ],
-                None,
-                None,
-                None,
-                None,
-            ],
+            None,
         ]
         # Serve it the way the page transport reads it: a ds:1 blob.
         body = as_search_page(fake_inner)
@@ -306,12 +293,7 @@ class TestGetBookingOptionsSessionCaching:
         with patch.object(sf.client, "get") as mock_get:
             mock_response = type("R", (), {"text": body, "raise_for_status": lambda s: None})()
             mock_get.return_value = mock_response
-            try:
-                sf.search(_round_trip_filters())
-            except Exception:
-                # Parser will reject the fake flights — that's OK; we only
-                # care about the session-id capture side effect.
-                pass
+            sf.search(_round_trip_filters())
         assert sf._last_session_id == "HCAPTUREDSESSIONID----123ABC"
 
     def test_get_booking_options_uses_cached_session_id(self):
@@ -340,8 +322,8 @@ class TestGetBookingOptionsSessionCaching:
                 "R",
                 (),
                 {
-                    "content": b")]}'\n\n4\n[[]]\n",
-                    "text": ")]}'\n\n4\n[[]]\n",
+                    "content": json.dumps([["wrb.fr", None, "[]"]]).encode(),
+                    "text": json.dumps([["wrb.fr", None, "[]"]]),
                     "raise_for_status": lambda self: None,
                 },
             )()

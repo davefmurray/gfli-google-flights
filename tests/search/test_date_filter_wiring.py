@@ -95,9 +95,11 @@ def test_date_price_uses_only_matching_flights(mode, monkeypatch):
             )
         ),
     )
-    monkeypatch.setattr("fli.search.dates.extract_payload", lambda text: [None, None, [[1, 2]]])
     monkeypatch.setattr(
-        "fli.search.dates.parse_flight_row",
+        "fli.search.dates.extract_payload", lambda text: [None, None, [[1, 2]], None]
+    )
+    monkeypatch.setattr(
+        "fli.search._decoders.parse_flight_row",
         Mock(
             side_effect=[
                 result(Airline.AA, 8, 100),
