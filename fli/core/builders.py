@@ -5,8 +5,36 @@ to construct flight search filter objects.
 """
 
 from datetime import datetime, timedelta
+from typing import Literal
 
 from fli.models import Airport, FlightSegment, TimeRestrictions, TripType
+
+
+def resolve_trip_durations(
+    duration: int | None, minimum: int | None, maximum: int | None, is_round_trip: bool
+) -> list[int | None]:
+    """Validate fixed/ranged stays identically for CLI and MCP before searching."""
+    if minimum is not None or maximum is not None:
+        if not is_round_trip:
+            raise ValueError(
+                "min_duration/--min-duration and max_duration/--max-duration require a round trip"
+            )
+        if duration is not None:
+            raise ValueError(
+                "Cannot combine trip_duration/--duration with min_duration/max_duration"
+            )
+        if minimum is None or maximum is None:
+            raise ValueError(
+                "Both min_duration/--min-duration and max_duration/--max-duration are required"
+            )
+        if not 1 <= minimum <= maximum <= 366:
+            raise ValueError(
+                "Trip duration range must satisfy 1 <= min_duration <= max_duration <= 366"
+            )
+        return list(range(minimum, maximum + 1))
+    if duration is not None and duration < 1:
+        raise ValueError("Trip duration must be at least one day")
+    return [duration if duration is not None else 3] if is_round_trip else [None]
 
 
 def normalize_date(date_str: str) -> str:
@@ -71,6 +99,7 @@ def build_flight_segments(
     departure_date: str,
     return_date: str | None = None,
     time_restrictions: TimeRestrictions | None = None,
+    return_time_restrictions: TimeRestrictions | None | Literal[False] = False,
 ) -> tuple[list[FlightSegment], TripType]:
     """Build flight segments for a search request.
 
@@ -80,11 +109,15 @@ def build_flight_segments(
         departure_date: Outbound travel date in YYYY-MM-DD format
         return_date: Return travel date in YYYY-MM-DD format (optional)
         time_restrictions: Time restrictions to apply to segments
+        return_time_restrictions: False inherits outbound; None clears the return
+            filter; a TimeRestrictions value independently filters the return.
 
     Returns:
         Tuple of (list of FlightSegment objects, TripType)
 
     """
+    if return_time_restrictions is not False and not return_date:
+        raise ValueError("Return time restrictions require a return date")
     departure_date = normalize_date(departure_date)
 
     # Normalize to lists for uniform handling
@@ -110,7 +143,11 @@ def build_flight_segments(
                 departure_airport=[[apt, 0] for apt in destinations],
                 arrival_airport=[[apt, 0] for apt in origins],
                 travel_date=return_date,
-                time_restrictions=time_restrictions,
+                time_restrictions=(
+                    time_restrictions
+                    if return_time_restrictions is False
+                    else return_time_restrictions
+                ),
             )
         )
 
@@ -157,6 +194,7 @@ def build_date_search_segments(
     trip_duration: int | None = None,
     is_round_trip: bool = False,
     time_restrictions: TimeRestrictions | None = None,
+    return_time_restrictions: TimeRestrictions | None | Literal[False] = False,
 ) -> tuple[list[FlightSegment], TripType]:
     """Build flight segments for a date range search.
 
@@ -167,11 +205,15 @@ def build_date_search_segments(
         trip_duration: Duration of the trip in days (for round trips)
         is_round_trip: Whether to search for round-trip flights
         time_restrictions: Time restrictions to apply to segments
+        return_time_restrictions: False inherits outbound; None clears the return
+            filter; a TimeRestrictions value independently filters the return.
 
     Returns:
         Tuple of (list of FlightSegment objects, TripType)
 
     """
+    if return_time_restrictions is not False and not is_round_trip:
+        raise ValueError("Return time restrictions require a round trip")
     start_date = normalize_date(start_date)
 
     # Normalize to lists for uniform handling
@@ -200,7 +242,11 @@ def build_date_search_segments(
                 departure_airport=[[apt, 0] for apt in destinations],
                 arrival_airport=[[apt, 0] for apt in origins],
                 travel_date=return_date,
-                time_restrictions=time_restrictions,
+                time_restrictions=(
+                    time_restrictions
+                    if return_time_restrictions is False
+                    else return_time_restrictions
+                ),
             )
         )
 

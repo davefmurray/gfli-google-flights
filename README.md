@@ -32,6 +32,8 @@ glfi airports Jacksonville
 glfi JAX JFK 2026-10-15
 glfi flights JAX JFK 2026-10-15 --format json
 glfi JAX JFK 2026-10-15 --adults 2 --children 1
+glfi JAX JFK,LGA 2026-10-15 --return 2026-10-19 --time 6-12 --return-time 16-23
+glfi dates JAX JFK,LGA --from 2026-10-15 --to 2026-10-17 --round --min-duration 3 --max-duration 5
 glfi dates --help
 ```
 
@@ -43,9 +45,28 @@ the airline or booking site before purchasing.
 `flights` and `dates` accept `--passengers` (aliases `--adults`, `-p`),
 `--children`, `--infants-in-seat`, and `--infants-on-lap`. MCP flight/date/booking
 tools expose the corresponding `passengers`, `children`, `infants_in_seat`, and
-`infants_on_lap` fields. Per-itinerary flight booking links preserve both cabin
-and passenger mix. Generic search links, including date-result links, do not yet
-preserve cabin or passenger mix.
+`infants_on_lap` fields. Both itinerary booking links and search/date links preserve
+cabin and passenger mix. Search links also preserve every selected airport;
+client-side-only filters such as time windows are not encoded in those links.
+
+Both CLI searches accept comma-separated origin and destination airports. Empty
+entries are rejected; repeated codes are deduplicated. MCP uses the same parser.
+
+Use `--return-time` (`-T`) for independent return departure hours; it requires
+`--return DATE` on flights or `--round` on dates. MCP exposes
+`return_departure_window` on flight, date, and booking tools. When omitted,
+the return inherits `--time` / `departure_window`, preserving existing behavior.
+
+Date searches accept `--min-duration` and `--max-duration` together, or MCP
+`min_duration` and `max_duration`. These require a round trip and cannot be combined
+with `--duration` / `trip_duration`. Stay lengths are inclusive, 1-366 days; the
+departure-date count multiplied by the number of stay lengths must not exceed
+366. Flexible results contain departure/return pairs sorted by price. Without
+a range or explicit duration, round trips still default to a three-day stay.
+
+Round-trip flight results quote the selected return option's complete itinerary
+fare, not the outbound board's starting fare and not the sum of both quotes.
+An unavailable selected fare remains unknown.
 
 Same-day validation uses a conservative `UTC today - 1 day` allowance because
 the dataset lacks airport time zones. This avoids rejecting evening departures
@@ -96,7 +117,10 @@ docker compose up --build
   the required results. Returning only the first leg would be misleading.
 - Booking-price lookup still depends on a Google RPC that can reject requests.
   Google Flights deep links are available and preserve the requested cabin.
-- Date scans make a search request per candidate date. Start with a short range.
+- Date scans make a search request per date/stay combination. Return-time filters
+  require additional return searches for up to five outbound candidates per pair.
+  Prices are the cheapest among the candidates checked, not an exhaustive guarantee.
+  Start with a short range; the 366-combination limit is not a 366-request limit.
 - Some passenger combinations, particularly infants, may produce no inline results.
 - The inherited TypeScript library in `fli-js/` has not received the Python
   search-page transport repair. It is experimental and publishing is disabled.

@@ -30,6 +30,14 @@ class ParseError(ValueError):
     pass
 
 
+def resolve_airports(codes: str) -> list[Airport]:
+    """Resolve comma-separated airport codes, preserving order without duplicates."""
+    tokens = [code.strip() for code in codes.split(",")]
+    if not all(tokens):
+        raise ParseError("Airport lists must contain non-empty comma-separated IATA codes")
+    return list(dict.fromkeys(resolve_airport(code) for code in tokens))
+
+
 def resolve_enum(enum_cls: type[T], name: str) -> T:
     """Resolve an enum member by name with normalized errors.
 

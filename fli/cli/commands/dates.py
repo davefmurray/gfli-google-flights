@@ -24,9 +24,9 @@ from fli.core import (
     parse_alliances,
     parse_cabin_class,
     parse_max_stops,
-    resolve_airport,
 )
-from fli.core.parsers import ParseError
+from fli.core.builders import resolve_trip_durations
+from fli.core.parsers import ParseError, resolve_airports
 from fli.models import (
     DateSearchFilters,
     PassengerInfo,
@@ -66,8 +66,12 @@ def _build_selected_days(
 
 
 def dates(
-    origin: Annotated[str, typer.Argument(help="Departure airport IATA code (e.g., JFK)")],
-    destination: Annotated[str, typer.Argument(help="Arrival airport IATA code (e.g., LHR)")],
+    origin: Annotated[
+        str, typer.Argument(help="Departure IATA codes, comma-separated (e.g., JFK,LGA)")
+    ],
+    destination: Annotated[
+        str, typer.Argument(help="Arrival IATA codes, comma-separated (e.g., LHR,CDG)")
+    ],
     start_date: Annotated[
         str,
         typer.Option("--from", help="Start date (YYYY-MM-DD)"),
@@ -76,13 +80,38 @@ def dates(
         datetime.now() + timedelta(days=60)
     ).strftime("%Y-%m-%d"),
     trip_duration: Annotated[
-        int,
+        int | None,
         typer.Option(
             "--duration",
             "-d",
             help="Trip duration in days",
+            min=1,
         ),
-    ] = 3,
+    ] = None,
+    min_duration: Annotated[
+        int | None,
+        typer.Option(
+            "--min-duration",
+            min=1,
+            max=366,
+            help="Minimum stay in days; requires --round and --max-duration",
+        ),
+    ] = None,
+    max_duration: Annotated[
+        int | None,
+        typer.Option(
+            "--max-duration",
+            min=1,
+            max=366,
+            help="Maximum stay in days; requires --round and --min-duration",
+        ),
+    ] = None,
+    return_departure_window: Annotated[
+        str | None,
+        typer.Option(
+            "--return-time", "-T", help="Return departure hours (e.g., 16-23); requires --round"
+        ),
+    ] = None,
     passengers: Annotated[
         int,
         typer.Option(
@@ -301,10 +330,14 @@ def dates(
         start_date = normalize_cli_date(start_date)
         end_date = normalize_cli_date(end_date)
         departure_window = normalize_cli_time_range(departure_window)
+        return_departure_window = normalize_cli_time_range(return_departure_window)
+        durations = resolve_trip_durations(trip_duration, min_duration, max_duration, is_round_trip)
+        if min_duration is None and trip_duration is None:
+            trip_duration = 3
 
         # Parse parameters using shared utilities
-        origin_airport = resolve_airport(origin)
-        destination_airport = resolve_airport(destination)
+        origin_airport = resolve_airports(origin)
+        destination_airport = resolve_airports(destination)
         trip_type = TripType.ROUND_TRIP if is_round_trip else TripType.ONE_WAY
         stops = parse_max_stops(max_stops)
         seat_type = parse_cabin_class(cabin_class)
@@ -322,11 +355,18 @@ def dates(
             sunday=sunday,
         )
         query = {
-            "origin": origin_airport.name,
-            "destination": destination_airport.name,
+            "origin": ",".join(a.name for a in origin_airport),
+            "destination": ",".join(a.name for a in destination_airport),
             "start_date": start_date,
             "end_date": end_date,
             "trip_duration": trip_duration,
+            "min_duration": min_duration,
+            "max_duration": max_duration,
+            "return_departure_window": (
+                f"{return_departure_window[0]}-{return_departure_window[1]}"
+                if return_departure_window
+                else None
+            ),
             "is_round_trip": is_round_trip,
             "passengers": passengers,
             "children": children,
@@ -342,7 +382,7 @@ def dates(
                 if parsed_airlines
                 else None
             ),
-            "sort_by_price": sort_by_price,
+            "sort_by_price": sort_by_price or min_duration is not None,
             "days": [day.value for day in selected_days],
         }
 
@@ -358,13 +398,22 @@ def dates(
             )
 
         # Build flight segments using shared builder
+        return_time_restrictions = (
+            TimeRestrictions(
+                earliest_departure=return_departure_window[0],
+                latest_departure=return_departure_window[1],
+            )
+            if return_departure_window
+            else False
+        )
         segments, trip_type = build_date_search_segments(
             origin=origin_airport,
             destination=destination_airport,
             start_date=start_date,
-            trip_duration=trip_duration,
+            trip_duration=durations[0],
             is_round_trip=is_round_trip,
             time_restrictions=time_restrictions,
+            return_time_restrictions=return_time_restrictions,
         )
 
         # Build layover constraints (min / max duration; airports stay
@@ -397,7 +446,7 @@ def dates(
             layover_restrictions=layover_restrictions,
             from_date=start_date,
             to_date=end_date,
-            duration=trip_duration if trip_type == TripType.ROUND_TRIP else None,
+            duration=durations[0],
         )
 
         # Perform search; pass currency/language/country through as URL params.
@@ -407,6 +456,7 @@ def dates(
             currency=currency,
             language=language,
             country=country,
+            **({"durations": durations} if min_duration is not None else {}),
         )
 
         if not results:
@@ -416,11 +466,11 @@ def dates(
             results = filter_dates_by_days(results, selected_days, trip_type)
 
         # Sort dates by price if sort flag is enabled
-        if sort_by_price:
+        if sort_by_price or min_duration is not None:
             results.sort(key=lambda x: x.price)
 
-        origin_code = origin_airport.name.lstrip("_")
-        destination_code = destination_airport.name.lstrip("_")
+        origin_code = ",".join(a.name for a in origin_airport)
+        destination_code = ",".join(a.name for a in destination_airport)
 
         if output_format == OutputFormat.JSON:
             emit_json(
@@ -439,6 +489,7 @@ def dates(
                             currency=currency,
                             language=language,
                             country=country,
+                            search_filters=filters,
                         )
                         for result in results
                     ],
@@ -464,6 +515,7 @@ def dates(
             currency=currency,
             language=language,
             country=country,
+            search_filters=filters,
         )
 
     except ParseError as e:

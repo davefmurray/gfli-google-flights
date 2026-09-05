@@ -7,7 +7,9 @@ _flight_extras, and the bare-except error path in _execute_flight_search.
 
 from __future__ import annotations
 
+import base64
 from unittest.mock import MagicMock
+from urllib.parse import parse_qs, urlparse
 
 import pytest
 
@@ -473,7 +475,8 @@ class TestSearchReturnsBookingUrl:
         result = _execute_flight_search(params)
         assert result["success"] is True
         assert "booking_url" in result
-        assert "JFK" in result["booking_url"]
+        token = parse_qs(urlparse(result["booking_url"]).query)["tfs"][0]
+        assert b"JFK" in base64.urlsafe_b64decode(token + "=" * (-len(token) % 4))
 
     def test_per_flight_booking_url_in_flights_array(self, monkeypatch, params):
         """Each flight in the flights[] array carries its own booking_url."""
@@ -494,7 +497,7 @@ class TestSearchReturnsBookingUrl:
         )
 
     def test_top_level_search_booking_url_still_present(self, monkeypatch, params):
-        """The top-level search booking_url (q= link) is kept alongside per-flight links."""
+        """The encoded search link is kept alongside per-itinerary booking links."""
         flight = _make_bookable_flight()
         monkeypatch.setattr(
             "fli.mcp.server.SearchFlights.search",
@@ -503,7 +506,7 @@ class TestSearchReturnsBookingUrl:
         result = _execute_flight_search(params)
         assert result["success"] is True
         # Top-level booking_url points to the search page, not a specific flight
-        assert "q=" in result["booking_url"]
+        assert "/flights?tfs=" in result["booking_url"]
         # Per-flight booking_url is in each flight dict
         assert "booking_url" in result["flights"][0]
 

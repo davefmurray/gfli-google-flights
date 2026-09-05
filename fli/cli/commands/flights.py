@@ -18,7 +18,6 @@ from fli.cli.utils import (
 )
 from fli.core import (
     build_flight_segments,
-    google_flights_url,
     parse_airlines,
     parse_alliances,
     parse_cabin_class,
@@ -27,7 +26,7 @@ from fli.core import (
     parse_sort_by,
     resolve_airport,
 )
-from fli.core.parsers import ParseError
+from fli.core.parsers import ParseError, resolve_airports
 from fli.models import (
     BagsFilter,
     FlightSearchFilters,
@@ -35,6 +34,7 @@ from fli.models import (
     PassengerInfo,
 )
 from fli.search import SearchClientError, SearchFlights
+from fli.search.links import search_url
 
 
 def _search_flights_core(
@@ -66,6 +66,7 @@ def _search_flights_core(
     exclude_alliance: list[str] | None = None,
     min_layover: int | None = None,
     max_layover: int | None = None,
+    return_departure_window: str | tuple[int, int] | None = None,
 ) -> None:
     """Core flight search functionality."""
     query: dict[str, Any] = {
@@ -88,6 +89,12 @@ def _search_flights_core(
         departure_date = normalize_cli_date(departure_date)
         return_date = normalize_cli_date(return_date)
         departure_window = normalize_cli_time_range(departure_window)
+        return_departure_window = normalize_cli_time_range(return_departure_window)
+        query["return_departure_window"] = (
+            f"{return_departure_window[0]}-{return_departure_window[1]}"
+            if return_departure_window
+            else None
+        )
         query["departure_date"] = departure_date
         query["return_date"] = return_date
         query["departure_window"] = (
@@ -95,8 +102,10 @@ def _search_flights_core(
         )
 
         # Parse parameters using shared utilities
-        origin_airport = resolve_airport(origin)
-        destination_airport = resolve_airport(destination)
+        origin_airport = resolve_airports(origin)
+        destination_airport = resolve_airports(destination)
+        query["origin"] = ",".join(a.name for a in origin_airport)
+        query["destination"] = ",".join(a.name for a in destination_airport)
         seat_type = parse_cabin_class(cabin_class)
         stops = parse_max_stops(max_stops)
         parsed_airlines = parse_airlines(airlines)
@@ -129,23 +138,23 @@ def _search_flights_core(
             )
 
         # Create flight segments using shared builder
+        from fli.models import TimeRestrictions
+
+        return_time_restrictions = (
+            TimeRestrictions(
+                earliest_departure=return_departure_window[0],
+                latest_departure=return_departure_window[1],
+            )
+            if return_departure_window
+            else False
+        )
         segments, trip_type = build_flight_segments(
             origin=origin_airport,
             destination=destination_airport,
             departure_date=departure_date,
             return_date=return_date,
             time_restrictions=time_restrictions,
-        )
-
-        # Shareable Google Flights deep link for this search.
-        booking_url = google_flights_url(
-            origin_airport.name.lstrip("_"),
-            destination_airport.name.lstrip("_"),
-            departure_date,
-            return_date,
-            currency=currency,
-            language=language,
-            country=country,
+            return_time_restrictions=return_time_restrictions,
         )
 
         # Parse layover constraints (airports, min duration, max duration).
@@ -189,6 +198,7 @@ def _search_flights_core(
 
         # Perform search; `currency` doubles as Google's `curr=` URL param so
         # results come back priced in the requested currency.
+        booking_url = search_url(filters, currency=currency, language=language, country=country)
         search_client = SearchFlights()
         results = search_client.search(
             filters,
@@ -307,8 +317,12 @@ def _search_flights_core(
 
 
 def flights(
-    origin: Annotated[str, typer.Argument(help="Departure airport IATA code (e.g., JFK)")],
-    destination: Annotated[str, typer.Argument(help="Arrival airport IATA code (e.g., LHR)")],
+    origin: Annotated[
+        str, typer.Argument(help="Departure IATA codes, comma-separated (e.g., JFK,LGA)")
+    ],
+    destination: Annotated[
+        str, typer.Argument(help="Arrival IATA codes, comma-separated (e.g., LHR,CDG)")
+    ],
     departure_date: Annotated[str, typer.Argument(help="Travel date (YYYY-MM-DD)")],
     return_date: Annotated[
         str | None,
@@ -324,6 +338,12 @@ def flights(
             "--time",
             "-t",
             help="Departure time window in 24h format (e.g., 6-20)",
+        ),
+    ] = None,
+    return_departure_window: Annotated[
+        str | None,
+        typer.Option(
+            "--return-time", "-T", help="Return departure hours (e.g., 16-23); requires --return"
         ),
     ] = None,
     passengers: Annotated[
@@ -535,6 +555,7 @@ def flights(
         departure_date=departure_date,
         return_date=return_date,
         departure_window=departure_window,
+        return_departure_window=return_departure_window,
         passengers=passengers,
         children=children,
         infants_in_seat=infants_in_seat,

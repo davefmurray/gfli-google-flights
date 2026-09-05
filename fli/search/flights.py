@@ -566,6 +566,8 @@ class SearchFlights:
                     combos.append((outbound,) + nxt)
                 else:
                     combos.append((outbound, nxt))
+        if filters.sort_by == SortBy.CHEAPEST:
+            combos.sort(key=lambda trip: (trip[-1].price is None, trip[-1].price))
         return combos
 
     # ------------------------------------------------------------------

@@ -261,7 +261,7 @@ def test_display_one_way_price():
 
 
 def test_display_round_trip_price_not_doubled():
-    """Round-trip display must use outbound price only (Google returns full RT price per leg)."""
+    """Round-trip display must not add the starting fare to the final fare."""
     outbound = _make_flight_result(price=317.0, flight_number="DL100")
     return_flight = _make_flight_result(price=317.0, airline=Airline.DL, flight_number="DL200")
 
@@ -287,13 +287,14 @@ def test_display_multi_city_three_legs():
 
 
 def test_display_round_trip_price_asymmetric():
-    """When leg prices differ, total should be the outbound price, not the sum."""
+    """When selection changes the fare, display the final quote, not the starting fare."""
     outbound = _make_flight_result(price=400.0)
     return_flight = _make_flight_result(price=350.0)
 
     output = _capture_display([(outbound, return_flight)])
 
-    assert "$400.00" in output
+    assert "$350.00" in output
+    assert "$400.00" not in output
     assert "$750.00" not in output
 
 

@@ -132,6 +132,17 @@ _DEFAULT_MAX_WORKERS = 10
 _executor_lock = threading.Lock()
 _executor: ThreadPoolExecutor | None = None
 _executor_max_workers: int = _DEFAULT_MAX_WORKERS
+_worker_context = threading.local()
+
+
+def _run_in_worker(fn: Callable[[T], R], item: T) -> R:
+    """Mark shared-pool workers so nested searches cannot exhaust their own pool."""
+    previous = getattr(_worker_context, "active", False)
+    _worker_context.active = True
+    try:
+        return fn(item)
+    finally:
+        _worker_context.active = previous
 
 
 def get_executor(max_workers: int | None = None) -> ThreadPoolExecutor:
@@ -204,11 +215,13 @@ def parallel_map(
     if n == 0:
         return []
     workers = max_workers if max_workers is not None else _executor_max_workers
-    if n == 1 or workers == 1:
+    # A worker waiting for nested futures can deadlock when all workers do so.
+    # Parallelize the outer search; run its inner expansion on the same worker.
+    if n == 1 or workers == 1 or getattr(_worker_context, "active", False):
         return [fn(materialised[0])] if n == 1 else [fn(item) for item in materialised]
 
     executor = get_executor(max_workers=workers)
-    futures = [executor.submit(fn, item) for item in materialised]
+    futures = [executor.submit(_run_in_worker, fn, item) for item in materialised]
     results: list[R] = [None] * n  # type: ignore[list-item]
     first_exc: BaseException | None = None
     for idx, fut in enumerate(futures):

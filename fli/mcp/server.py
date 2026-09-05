@@ -29,10 +29,10 @@ from fli.core import (
     parse_emissions,
     parse_max_stops,
     parse_sort_by,
-    resolve_airport,
     search_airports,
 )
-from fli.core.parsers import ParseError
+from fli.core.builders import resolve_trip_durations
+from fli.core.parsers import ParseError, resolve_airports
 from fli.models import (
     Airport,
     BagsFilter,
@@ -42,6 +42,7 @@ from fli.models import (
     TripType,
 )
 from fli.search import SearchDates, SearchFlights
+from fli.search.links import search_url
 
 
 class FlightSearchConfig(BaseSettings):
@@ -111,6 +112,9 @@ class FlightSearchParams(BaseModel):
     departure_date: str = Field(description="Outbound travel date in YYYY-MM-DD format")
     return_date: str | None = Field(
         None, description="Return date in YYYY-MM-DD format (omit for one-way)"
+    )
+    return_departure_window: str | None = Field(
+        None, description="Return departure hours; requires return_date"
     )
     departure_window: str | None = Field(
         None, description="Preferred departure time window in 'HH-HH' 24h format (e.g., '6-20')"
@@ -200,8 +204,13 @@ class DateSearchParams(BaseModel):
     )
     start_date: str = Field(description="Start of date range in YYYY-MM-DD format")
     end_date: str = Field(description="End of date range in YYYY-MM-DD format")
-    trip_duration: int = Field(
-        3, ge=1, description="Trip duration in days (for round-trip searches)"
+    trip_duration: int | None = Field(
+        None, ge=1, description="Fixed trip duration in days; defaults to 3 without a range"
+    )
+    min_duration: int | None = Field(None, ge=1, le=366)
+    max_duration: int | None = Field(None, ge=1, le=366)
+    return_departure_window: str | None = Field(
+        None, description="Return departure hours; requires a round trip"
     )
     is_round_trip: bool = Field(False, description="Search for round-trip flights")
     airlines: list[str] | None = Field(
@@ -303,6 +312,7 @@ def _google_flights_url(
     currency: str | None,
     language: str | None,
     country: str | None,
+    filters: FlightSearchFilters | DateSearchFilters | None = None,
 ) -> str:
     """Build a shareable Google Flights deep link for the search.
 
@@ -311,6 +321,14 @@ def _google_flights_url(
     used when multiple are given, keeping the query unambiguous for Google's
     parser.
     """
+    if filters is not None:
+        return search_url(
+            filters,
+            travel_dates=[departure_date, return_date] if return_date else [departure_date],
+            currency=currency,
+            language=language,
+            country=country,
+        )
     return google_flights_url(
         _iata(origins[0]),
         _iata(destinations[0]),
@@ -476,11 +494,11 @@ def _serialize_flight_result(
     segments = list(flight)
 
     if len(segments) == 2 and is_round_trip:
-        # Google Flights returns the full round-trip price on the outbound leg
+        # The chosen return carries the complete fare; outbound is a starting fare.
         outbound, return_flight = segments
         out = {
-            "price": outbound.price,
-            "currency": outbound.currency or CONFIG.default_currency,
+            "price": return_flight.price,
+            "currency": return_flight.currency or CONFIG.default_currency,
             "legs": [
                 *[_serialize_flight_leg(leg) for leg in outbound.legs],
                 *[_serialize_flight_leg(leg) for leg in return_flight.legs],
@@ -496,7 +514,7 @@ def _serialize_flight_result(
 
     # Multi-city (3+ legs) or 2-leg non-round-trip: combined price on the
     # final leg (matches Google Flights pricing and the CLI display logic).
-    price_segment = segments[-1] if len(segments) > 2 else segments[0]
+    price_segment = segments[-1]
     out = {
         "price": price_segment.price,
         "currency": price_segment.currency or CONFIG.default_currency,
@@ -522,6 +540,7 @@ def _serialize_date_result(
     origins: list[Airport],
     destinations: list[Airport],
     locale: tuple[str | None, str | None, str | None],
+    filters: DateSearchFilters | None = None,
 ) -> dict[str, Any]:
     """Serialize a date price result, including a deep link for that date."""
     dates = date_result.date
@@ -535,7 +554,7 @@ def _serialize_date_result(
     }
     if departure:
         out["booking_url"] = _google_flights_url(
-            origins, destinations, departure, return_date, *locale
+            origins, destinations, departure, return_date, *locale, filters=filters
         )
     return out
 
@@ -547,10 +566,7 @@ def _serialize_date_result(
 
 def _resolve_airports(codes: str) -> list[Airport]:
     """Resolve one or more comma-separated airport codes."""
-    airports = [resolve_airport(code.strip()) for code in codes.split(",") if code.strip()]
-    if not airports:
-        raise ParseError(f"No valid airport codes found in: '{codes}'")
-    return airports
+    return resolve_airports(codes)
 
 
 def _build_flight_filters(
@@ -584,6 +600,11 @@ def _build_flight_filters(
         departure_date=params.departure_date,
         return_date=params.return_date,
         time_restrictions=time_restrictions,
+        return_time_restrictions=(
+            build_time_restrictions(params.return_departure_window)
+            if params.return_departure_window is not None
+            else False
+        ),
     )
 
     # Parse new filters
@@ -649,6 +670,7 @@ def _execute_flight_search(params: FlightSearchParams) -> dict[str, Any]:
             params.currency,
             params.language,
             params.country,
+            filters=filters,
         )
 
         if not flights:
@@ -728,6 +750,7 @@ def _execute_booking_options(
             params.currency,
             params.language,
             params.country,
+            filters=filters,
         )
 
         if not flights:
@@ -810,14 +833,22 @@ def _execute_date_search(params: DateSearchParams) -> dict[str, Any]:
         departure_window = params.departure_window or CONFIG.default_departure_window
         time_restrictions = build_time_restrictions(departure_window) if departure_window else None
 
+        durations = resolve_trip_durations(
+            params.trip_duration, params.min_duration, params.max_duration, params.is_round_trip
+        )
         # Build flight segments (pass full lists for multi-airport support)
         segments, trip_type = build_date_search_segments(
             origin=origins,
             destination=destinations,
             start_date=params.start_date,
-            trip_duration=params.trip_duration,
+            trip_duration=durations[0],
             is_round_trip=params.is_round_trip,
             time_restrictions=time_restrictions,
+            return_time_restrictions=(
+                build_time_restrictions(params.return_departure_window)
+                if params.return_departure_window is not None
+                else False
+            ),
         )
 
         layover_restrictions = None
@@ -848,7 +879,7 @@ def _execute_date_search(params: DateSearchParams) -> dict[str, Any]:
             layover_restrictions=layover_restrictions,
             from_date=params.start_date,
             to_date=params.end_date,
-            duration=params.trip_duration if params.is_round_trip else None,
+            duration=durations[0],
         )
 
         # Perform search
@@ -859,6 +890,7 @@ def _execute_date_search(params: DateSearchParams) -> dict[str, Any]:
             currency=currency,
             language=params.language,
             country=params.country,
+            **({"durations": durations} if params.min_duration is not None else {}),
         )
 
         if not dates:
@@ -870,12 +902,14 @@ def _execute_date_search(params: DateSearchParams) -> dict[str, Any]:
                 "date_range": f"{params.start_date} to {params.end_date}",
             }
 
-        if params.sort_by_price:
+        if params.sort_by_price or params.min_duration is not None:
             dates.sort(key=lambda x: x.price)
 
         # Serialize results
         locale = (params.currency, params.language, params.country)
-        date_results = [_serialize_date_result(d, origins, destinations, locale) for d in dates]
+        date_results = [
+            _serialize_date_result(d, origins, destinations, locale, filters) for d in dates
+        ]
 
         if CONFIG.max_results:
             date_results = date_results[: CONFIG.max_results]
@@ -886,7 +920,11 @@ def _execute_date_search(params: DateSearchParams) -> dict[str, Any]:
             "count": len(date_results),
             "trip_type": trip_type.name,
             "date_range": f"{params.start_date} to {params.end_date}",
-            "duration": params.trip_duration if params.is_round_trip else None,
+            "duration": durations[0]
+            if params.is_round_trip and params.min_duration is None
+            else None,
+            "min_duration": params.min_duration,
+            "max_duration": params.max_duration,
         }
 
     except ParseError as e:
@@ -932,6 +970,9 @@ def search_flights(
     departure_window: Annotated[
         str | None,
         Field(description="Departure time window in 'HH-HH' 24h format (e.g., '6-20')"),
+    ] = None,
+    return_departure_window: Annotated[
+        str | None, Field(description="Return departure hours (HH-HH); requires return_date")
     ] = None,
     airlines: Annotated[
         list[str] | None,
@@ -1038,6 +1079,7 @@ def search_flights(
         departure_date=departure_date,
         return_date=return_date,
         departure_window=effective_departure_window,
+        return_departure_window=return_departure_window,
         airlines=airlines,
         cabin_class=cabin_class,
         max_stops=max_stops,
@@ -1093,9 +1135,27 @@ def search_dates(
     start_date: Annotated[str, Field(description="Start of date range in YYYY-MM-DD format")],
     end_date: Annotated[str, Field(description="End of date range in YYYY-MM-DD format")],
     trip_duration: Annotated[
-        int,
-        Field(description="Trip duration in days for round-trips", ge=1),
-    ] = 3,
+        int | None,
+        Field(description="Fixed trip duration in days; defaults to 3 without a range", ge=1),
+    ] = None,
+    min_duration: Annotated[
+        int | None,
+        Field(
+            description=(
+                "Minimum stay; requires max_duration and is_round_trip; "
+                "maximum 366 date/duration combinations"
+            ),
+            ge=1,
+            le=366,
+        ),
+    ] = None,
+    max_duration: Annotated[
+        int | None,
+        Field(description="Maximum stay; requires min_duration and is_round_trip", ge=1, le=366),
+    ] = None,
+    return_departure_window: Annotated[
+        str | None, Field(description="Return departure hours (HH-HH); requires is_round_trip")
+    ] = None,
     is_round_trip: Annotated[
         bool,
         Field(description="Search for round-trip flights"),
@@ -1181,6 +1241,9 @@ def search_dates(
         start_date=start_date,
         end_date=end_date,
         trip_duration=trip_duration,
+        min_duration=min_duration,
+        max_duration=max_duration,
+        return_departure_window=return_departure_window,
         is_round_trip=is_round_trip,
         airlines=airlines,
         cabin_class=cabin_class,
@@ -1279,6 +1342,9 @@ def get_booking_options(
         str | None,
         Field(description="Departure time window in 'HH-HH' 24h format (e.g., '6-20')"),
     ] = None,
+    return_departure_window: Annotated[
+        str | None, Field(description="Return departure hours (HH-HH); requires return_date")
+    ] = None,
     sort_by: Annotated[
         str,
         Field(
@@ -1341,6 +1407,7 @@ def get_booking_options(
         departure_date=departure_date,
         return_date=return_date,
         departure_window=effective_departure_window,
+        return_departure_window=return_departure_window,
         cabin_class=cabin_class,
         max_stops=max_stops,
         sort_by=sort_by,

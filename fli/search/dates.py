@@ -12,8 +12,8 @@ from datetime import datetime, timedelta
 from pydantic import BaseModel
 
 from fli.core import extract_currency_from_price_token
-from fli.models import DateSearchFilters
-from fli.models.google_flights.base import TripType, earliest_searchable_date
+from fli.models import DateSearchFilters, FlightSearchFilters
+from fli.models.google_flights.base import SortBy, TripType, earliest_searchable_date
 from fli.search._concurrency import parallel_map
 from fli.search._decoders import parse_flight_row
 from fli.search._tfs import (
@@ -59,6 +59,8 @@ class SearchDates:
         currency: str | None = None,
         language: str | None = None,
         country: str | None = None,
+        *,
+        durations: list[int] | None = None,
     ) -> list[DatePrice] | None:
         """Search for flight prices across a date range and search parameters.
 
@@ -67,6 +69,8 @@ class SearchDates:
             currency: Optional ISO 4217 currency code (e.g. ``"EUR"``) to bill prices in.
             language: Optional BCP-47 language code passed via the ``hl`` URL param.
             country: Optional ISO 3166-1 alpha-2 country code passed via the ``gl`` URL param.
+            durations: Optional stay lengths; round trips only, with at most 366
+                departure-date/stay-length combinations. Results are sorted by price.
 
         Returns:
             List of DatePrice objects containing date and price pairs, or None if no results
@@ -82,6 +86,30 @@ class SearchDates:
         from_date = datetime.strptime(filters.from_date, "%Y-%m-%d")
         to_date = datetime.strptime(filters.to_date, "%Y-%m-%d")
         date_range = (to_date - from_date).days + 1
+
+        if durations is not None:
+            if filters.trip_type != TripType.ROUND_TRIP:
+                raise ValueError("Duration ranges require a round trip")
+            if not durations or any(type(d) is not int or not 1 <= d <= 366 for d in durations):
+                raise ValueError("Durations must be integers between 1 and 366 days")
+            durations = sorted(set(durations))
+            if date_range * len(durations) > 366:
+                raise ValueError(
+                    "Flexible search exceeds 366 date/duration combinations; "
+                    "narrow the date or duration range"
+                )
+            results_by_date: dict[tuple[datetime, ...], DatePrice] = {}
+            for duration in durations:
+                prepared = filters.model_copy(deep=True)
+                prepared.duration = duration
+                prepared.flight_segments[1].travel_date = (
+                    prepared.flight_segments[0].parsed_travel_date + timedelta(days=duration)
+                ).strftime("%Y-%m-%d")
+                for result in self.search(prepared, currency, language, country) or []:
+                    previous = results_by_date.get(result.date)
+                    if previous is None or result.price < previous.price:
+                        results_by_date[result.date] = result
+            return sorted(results_by_date.values(), key=lambda r: (r.price, r.date)) or None
 
         if date_range <= self.MAX_DAYS_PER_SEARCH:
             return self._search_chunk(
@@ -234,6 +262,36 @@ class SearchDates:
         # abort the whole chunk.
         if day.date() < earliest_searchable_date():
             return None
+
+        # Return windows are client-side filters: an outbound board alone cannot
+        # establish that a qualifying return exists or quote its actual fare.
+        if (
+            filters.trip_type == TripType.ROUND_TRIP
+            and filters.flight_segments[1].time_restrictions
+        ):
+            from fli.search.flights import SearchFlights
+
+            data = filters.model_dump(exclude={"from_date", "to_date", "duration"})
+            for segment, date in zip(data["flight_segments"], travel_dates, strict=True):
+                segment["travel_date"] = date
+            client = SearchFlights()
+            client.client = self.client
+            itineraries = client.search(
+                FlightSearchFilters(**data, sort_by=SortBy.CHEAPEST),
+                currency=currency,
+                language=language,
+                country=country,
+            )
+            prices = [
+                trip[-1].price
+                for trip in itineraries or []
+                if isinstance(trip, tuple) and trip[-1].price is not None
+            ]
+            return (
+                DatePrice(date=tuple(dates), price=min(prices), currency=currency)
+                if prices
+                else None
+            )
 
         url = page_url(build_tfs(filters, travel_dates=travel_dates), currency, language, country)
         try:

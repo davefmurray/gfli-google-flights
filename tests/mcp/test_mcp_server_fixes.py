@@ -2,7 +2,7 @@
 
 Covers:
   1. list_tools FastMCP 3.x registration and annotations
-  2. Round-trip price doubling (Google Flights returns combined RT price on outbound leg)
+  2. Round-trip price doubling (each selection quotes a complete itinerary fare)
 """
 
 from unittest.mock import MagicMock
@@ -111,8 +111,8 @@ class TestSerializeFlightResult:
         assert result["price"] == 250.0
         assert result["currency"] == "USD"
 
-    def test_round_trip_uses_outbound_price_only(self):
-        """Round-trip price must equal outbound.price (Google already includes full RT price)."""
+    def test_round_trip_uses_final_price_only(self):
+        """Do not add the outbound starting fare to the selected return quote."""
         outbound = _make_flight(price=454.0, legs=[_make_leg("TLV", "ATH")])
         return_flight = _make_flight(price=454.0, legs=[_make_leg("ATH", "TLV")])
 
@@ -120,8 +120,8 @@ class TestSerializeFlightResult:
 
         # Must NOT be 454 + 454 = 908
         assert result["price"] == 454.0, (
-            f"Expected 454.0 (outbound price only), got {result['price']}. "
-            "Google Flights already includes the full RT price on the outbound leg."
+            f"Expected 454.0 (final quote), got {result['price']}. "
+            "Google Flights quotes a complete price at each selection."
         )
 
     def test_round_trip_price_not_doubled(self):
@@ -173,14 +173,14 @@ class TestSerializeFlightResult:
         assert result["price"] == 900.0
         assert len(result["legs"]) == 3
 
-    def test_two_tuple_without_round_trip_uses_outbound_price(self):
-        """A 2-element tuple with is_round_trip=False should use outbound price."""
+    def test_two_tuple_without_round_trip_uses_final_price(self):
+        """A 2-element tuple with is_round_trip=False should also use the final quote."""
         outbound = _make_flight(price=350.0, legs=[_make_leg("JFK", "LAX")])
-        return_flight = _make_flight(price=350.0, legs=[_make_leg("LAX", "JFK")])
+        return_flight = _make_flight(price=450.0, legs=[_make_leg("LAX", "JFK")])
 
         result = _serialize_flight_result((outbound, return_flight), is_round_trip=False)
 
-        assert result["price"] == 350.0
+        assert result["price"] == 450.0
         assert len(result["legs"]) == 2
 
     def test_uses_flight_currency_when_available(self):

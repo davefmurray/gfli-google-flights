@@ -20,7 +20,8 @@ from fli.core.builders import normalize_date
 from fli.core.parsers import ParseError
 from fli.core.parsers import parse_airlines as core_parse_airlines
 from fli.core.parsers import parse_max_stops as core_parse_max_stops
-from fli.models import Airline, Airport, MaxStops, TripType
+from fli.models import Airline, Airport, DateSearchFilters, MaxStops, TripType
+from fli.search.links import search_url
 
 
 def validate_currency(ctx: Context, param: Parameter, value: str | None) -> str | None:
@@ -267,11 +268,11 @@ def serialize_flight_result(
     segments = list(flight_data)
 
     if len(segments) == 2:
-        # Round-trip: Google Flights returns the full RT price on the outbound leg.
+        # The outbound board is a starting fare; the chosen return reprices the trip.
         outbound, return_flight = segments
         out = {
-            "price": outbound.price,
-            "currency": outbound.currency or default_currency,
+            "price": return_flight.price,
+            "currency": return_flight.currency or default_currency,
             "duration": outbound.duration + return_flight.duration,
             "stops": outbound.stops + return_flight.stops,
             "outbound": _serialize_flight_segment_result(outbound),
@@ -305,6 +306,7 @@ def serialize_date_result(
     currency: str | None = None,
     language: str | None = None,
     country: str | None = None,
+    search_filters: DateSearchFilters | None = None,
 ) -> dict[str, Any]:
     """Serialize a date search result for JSON output.
 
@@ -321,7 +323,15 @@ def serialize_date_result(
         "price": date_result.price,
         "currency": date_result.currency or default_currency,
     }
-    if origin and destination:
+    if search_filters is not None:
+        payload["booking_url"] = search_url(
+            search_filters,
+            travel_dates=[departure_date, return_date] if return_date else [departure_date],
+            currency=currency,
+            language=language,
+            country=country,
+        )
+    elif origin and destination:
         payload["booking_url"] = google_flights_url(
             origin,
             destination,
@@ -422,9 +432,8 @@ def display_flight_results(
         table.add_column("Label", style="blue")
         table.add_column("Value", style="green")
 
-        # Google Flights returns the full trip price on the outbound leg for round-trips,
-        # and on the final leg for multi-city trips.
-        price_segment = flight_segments[-1] if is_multi_city else flight_segments[0]
+        # The final selection carries the complete itinerary fare, not an add-on.
+        price_segment = flight_segments[-1]
         total_price = price_segment.price
         table.add_row(
             "Total Price", format_price(total_price, price_segment.currency or default_currency)
@@ -537,6 +546,7 @@ def display_date_results(
     currency: str | None = None,
     language: str | None = None,
     country: str | None = None,
+    search_filters: DateSearchFilters | None = None,
 ):
     """Display date search results with sparkline chart and table."""
     if not dates:
@@ -575,7 +585,7 @@ def display_date_results(
     # When the route is known, render each departure date as a clickable
     # Google Flights deep link (rich hyperlink — keeps the table narrow while
     # still letting the user jump straight to that date's flights).
-    links_enabled = bool(origin and destination)
+    links_enabled = search_filters is not None or bool(origin and destination)
 
     def _departure_cell(date_price: Any) -> str:
         label = date_price.date[0].strftime("%Y-%m-%d")
@@ -586,6 +596,15 @@ def display_date_results(
             if trip_type == TripType.ROUND_TRIP and len(date_price.date) > 1
             else None
         )
+        if search_filters is not None:
+            url = search_url(
+                search_filters,
+                travel_dates=[label, return_date] if return_date else [label],
+                currency=currency,
+                language=language,
+                country=country,
+            )
+            return f"[link={url}]{label}[/link]"
         url = google_flights_url(
             origin,
             destination,
