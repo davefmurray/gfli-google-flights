@@ -5,9 +5,10 @@ Inherited `v*` tags belong to Fli, not GLFI. Use `glfi-vX.Y.Z` for our releases.
 
 ## Before Publishing
 
-The local hardening batch does not authorize publication. Resolve repository
-visibility and obtain DFM's explicit release decision first. Docker execution and
-remote CI remain unverified until run on a suitable host.
+Public GitHub source publication was approved on 2026-09-05. That approval does
+not authorize PyPI, container-registry, or public service publication. Obtain an
+explicit package release decision and require successful remote CI/container
+verification before releasing artifacts.
 
 1. Confirm `glfi` can be registered on PyPI. A metadata 404 is not a reservation.
 2. Configure a PyPI trusted publisher for `davefmurray/glfi`, workflow `publish.yml`,

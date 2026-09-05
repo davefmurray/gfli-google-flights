@@ -1,6 +1,25 @@
 # GLFI Pre-Launch Work
 
-Local development only. No GitHub push, registry publication, or public deployment.
+Public source preview at https://github.com/davefmurray/glfi. Registry releases
+and public service deployment remain separate, unapproved operations. The local
+batch notes below are historical; their no-push statements describe that stage.
+
+## Public Source Preview
+
+- Public GitHub publication explicitly approved on 2026-09-05. Publish `main`
+  with upstream history and notices intact; do not push inherited Fli release tags.
+- README rewritten for new users: source installation, Starlink evidence and fare
+  premiums, connection rules, presets, seven MCP tools, diagnostics and limits.
+- Pre-push verification: 1,075 offline tests passed again on Python 3.11; README
+  Markdown/local links and all 12 shell blocks checked. The four-version feature
+  matrix remains recorded below. No runtime code changed for the README launch.
+- Gitleaks 8.30.1 scanned all 227 pre-launch commits reachable from `main`.
+  Three generic-key alerts were reviewed as upstream shopping/booking protobuf
+  test fixtures, not account credentials. No blanket suppression or history
+  rewrite applied. This is a scoped scan, not a comprehensive security guarantee.
+- Push triggers CI only. PyPI publishing remains explicitly dispatched and
+  separately gated; no package, container, or public HTTP service is released.
+- Current remote verification: [GitHub CI](https://github.com/davefmurray/glfi/actions/workflows/ci.yml).
 
 ## Final Selected Feature Batch
 
@@ -96,8 +115,8 @@ The earlier baseline already incorporated #230, #231, and #232.
 ## Remaining Before A Release Decision
 
 The four planned local implementation batches are complete. This is not a release
-approval: repository visibility, remote CI/container verification, and registry
-setup remain explicit gates. Provider-blocked features and TypeScript parity are
+approval: public source visibility is now approved, but remote CI/container verification
+and registry setup remain package-release gates. Provider-blocked features and TypeScript parity are
 not automatically part of the first release.
 
 - Explore (#226) remains deferred after the blocked live evaluation below.
