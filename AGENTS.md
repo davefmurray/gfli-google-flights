@@ -1,37 +1,36 @@
-# AGENTS.md
+# GLFI Development
 
-## Cursor Cloud specific instructions
+GLFI is an independent MIT-licensed derivative of punitarani/fli. Preserve
+upstream history and license notices. Public commands and distribution use
+`glfi`; Python imports stay under `fli` for now. Do not install the original
+`flights` distribution in the same environment.
 
-### Overview
+## Commands
 
-Fli is a Python library providing programmatic access to Google Flights data via reverse-engineered API. It offers a CLI (`fli`), MCP server (`fli-mcp` / `fli-mcp-http`), and Python API. No external services (databases, caches, etc.) are required.
+- Dependencies: `uv sync --all-extras`
+- Lint: `make lint`
+- Deterministic tests: `make test-offline`
+- CLI: `uv run glfi --help`
+- MCP stdio: `uv run glfi-mcp`
+- MCP HTTP: `uv run glfi-mcp-http` (loopback by default, port 8000)
+- Build: `uv build`
+- TypeScript offline checks: `cd fli-js && bun install && bun run ci`
 
-### Development commands
+## Boundaries
 
-All standard commands are in the `Makefile` and `CLAUDE.md`. Key ones:
+- No database or other persistent service is required.
+- Preserve existing separately installed `fli` until explicitly asked to replace it.
+- Google is unofficial and volatile. Never treat provider failures as proof of no flights.
+- Multi-city is unsupported by the public search-page transport.
+- Booking-price RPC can be rejected by Google; deep links are separate from live prices.
+- TypeScript transport is not yet ported. Its package is private/unpublished.
+- HTTP MCP has no built-in authentication. Never deploy it publicly without a gateway.
+- Do not publish packages, containers, or documentation automatically on push.
+- README.md and RELEASING.md supersede inherited upstream installation/release instructions.
 
-- **Install deps**: `uv sync --all-extras`
-- **Lint**: `make lint` (ruff)
-- **Format**: `make format`
-- **Tests**: `make test` (standard), `make test-all` (including fuzz)
-- **CLI**: `uv run fli flights JFK LAX 2026-05-15`
-- **MCP HTTP server**: `uv run fli-mcp-http` (serves at `http://127.0.0.1:8000/mcp/`)
+## Testing
 
-### Testing caveats
-
-- Tests under `tests/search/` hit the live Google Flights API and are rate-limited (HTTP 429). These will frequently fail in cloud/CI environments. All other tests (CLI, core, models, MCP) are self-contained and pass reliably.
-- Run `uv run pytest -vv --ignore=tests/search/` to skip flaky API-dependent tests.
-- One MCP test (`test_search_dates_round_trip`) also makes a live API call and may fail with empty results.
-
-### Releasing
-
-Releases are manual: GitHub Actions → **Release** → Run workflow on `main`,
-choose `bump=patch|minor|major|explicit`. Run with `dry_run=true` first to
-preview. Bump logic is in `scripts/bump_version.py` (testable). See the
-Releasing section in `CLAUDE.md` and the `.github/workflows/release*.yml`
-workflows for the full process.
-
-### MCP server notes
-
-- The MCP HTTP endpoint requires `Accept: application/json, text/event-stream` header.
-- The `fli/server/` module has been removed from the codebase.
+`make test-offline` excludes mixed/live-Google test modules, including the
+legacy MCP live-search module. It includes fixture decoders, protocol encoders, mocked
+transport tests, CLI tests, and localhost MCP HTTP integration tests. Use a few
+future-date live searches separately; do not run broad live date sweeps by default.

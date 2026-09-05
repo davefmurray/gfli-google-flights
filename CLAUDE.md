@@ -1,5 +1,12 @@
 # CLAUDE.md
 
+## GLFI Override
+
+Read [AGENTS.md](AGENTS.md), [README.md](README.md), and [RELEASING.md](RELEASING.md)
+first. They supersede the inherited Fli instructions below, especially command
+names, live-search limitations, and publishing. Public commands are `glfi`,
+`glfi-mcp`, and `glfi-mcp-http`; Python imports still use `fli`.
+
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview

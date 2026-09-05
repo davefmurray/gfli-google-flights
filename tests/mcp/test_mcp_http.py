@@ -8,6 +8,7 @@ Covers:
 import threading
 import time
 
+import httpx
 import pytest
 import uvicorn
 from fastmcp import Client
@@ -87,6 +88,12 @@ class TestMCPInProcess:
 
 class TestMCPHTTP:
     """Start the MCP server over HTTP and verify tools via a real connection."""
+
+    def test_health_endpoint(self, http_mcp_url):
+        url = http_mcp_url.removesuffix("mcp/") + "health"
+        response = httpx.get(url)
+        assert response.status_code == 200
+        assert response.json() == {"status": "ok", "service": "glfi"}
 
     @pytest.mark.asyncio
     async def test_http_list_tools(self, http_mcp_url):

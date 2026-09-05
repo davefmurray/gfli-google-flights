@@ -258,9 +258,9 @@ def dates(
     """Find the cheapest dates to fly between two airports.
 
     Example:
-        fli dates LAX MIA --class BUSINESS --stops NON_STOP --friday
-        fli dates LAX MIA --alliance ONEWORLD --currency EUR
-        fli dates LAX MIA --exclude-airlines DL --max-layover 240
+        glfi dates LAX MIA --class BUSINESS --stops NON_STOP --friday
+        glfi dates LAX MIA --alliance ONEWORLD --currency EUR
+        glfi dates LAX MIA --exclude-airlines DL --max-layover 240
 
     """
     try:

@@ -1,4 +1,14 @@
-# Fli Documentation
+# GLFI Reference Documentation
+
+**Migration in progress.** The material below was inherited from Fli and may
+refer to upstream packages or currently unsupported capabilities. For GLFI
+installation, MCP configuration, and live-search limitations, use the
+[GLFI README](https://github.com/davefmurray/glfi#readme). In particular,
+multi-city is unavailable, booking-price RPCs may be rejected, and the
+TypeScript search transport has not been repaired. No documentation site
+has been deployed for GLFI yet.
+
+## Historical Fli Overview
 
 Fli provides direct, reverse-engineered access to Google Flights' API. Unlike
 libraries that scrape HTML or drive a browser, Fli speaks the Flights API

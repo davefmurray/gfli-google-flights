@@ -14,6 +14,8 @@ from fastmcp import FastMCP
 from mcp.types import Icon
 from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from starlette.requests import Request
+from starlette.responses import JSONResponse
 
 from fli.core import (
     build_date_search_segments,
@@ -45,7 +47,7 @@ from fli.search import SearchDates, SearchFlights
 class FlightSearchConfig(BaseSettings):
     """Optional configuration for the Flight Search MCP server."""
 
-    model_config = SettingsConfigDict(env_prefix="FLI_MCP_")
+    model_config = SettingsConfigDict(env_prefix="GLFI_MCP_")
 
     default_passengers: int = Field(
         1,
@@ -82,7 +84,7 @@ CONFIG_SCHEMA = FlightSearchConfig.model_json_schema()
 
 
 mcp = FastMCP(
-    "Flight Search MCP Server",
+    "GLFI",
     icons=[
         Icon(
             src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48dGV4dCB5PSIuOWVtIiBmb250LXNpemU9IjkwIj7inIjvuI88L3RleHQ+PC9zdmc+",
@@ -1406,8 +1408,8 @@ def find_budget_window_prompt(
 
 
 @mcp.resource(
-    "resource://fli-mcp/configuration",
-    name="Fli MCP Configuration",
+    "resource://glfi-mcp/configuration",
+    name="GLFI MCP Configuration",
     description=(
         "Optional configuration defaults and environment variables for the Flight "
         "Search MCP server."
@@ -1420,14 +1422,14 @@ def configuration_resource() -> str:
         "defaults": CONFIG.model_dump(),
         "schema": CONFIG_SCHEMA,
         "environment": {
-            "prefix": "FLI_MCP_",
+            "prefix": "GLFI_MCP_",
             "variables": {
-                "FLI_MCP_DEFAULT_PASSENGERS": "Adjust the default passenger count.",
-                "FLI_MCP_DEFAULT_CURRENCY": "Override the fallback currency code for results.",
-                "FLI_MCP_DEFAULT_CABIN_CLASS": "Set a default cabin class.",
-                "FLI_MCP_DEFAULT_SORT_BY": "Set the default result sorting strategy.",
-                "FLI_MCP_DEFAULT_DEPARTURE_WINDOW": "Provide a default departure window (HH-HH).",
-                "FLI_MCP_MAX_RESULTS": "Limit the maximum number of results returned by tools.",
+                "GLFI_MCP_DEFAULT_PASSENGERS": "Adjust the default passenger count.",
+                "GLFI_MCP_DEFAULT_CURRENCY": "Override the fallback currency code for results.",
+                "GLFI_MCP_DEFAULT_CABIN_CLASS": "Set a default cabin class.",
+                "GLFI_MCP_DEFAULT_SORT_BY": "Set the default result sorting strategy.",
+                "GLFI_MCP_DEFAULT_DEPARTURE_WINDOW": "Provide a default departure window (HH-HH).",
+                "GLFI_MCP_MAX_RESULTS": "Limit the maximum number of results returned by tools.",
             },
         },
     }
@@ -1444,13 +1446,17 @@ def run():
     mcp.run(transport="stdio")
 
 
-def run_http(host: str = "0.0.0.0", port: int = 8000) -> None:
+@mcp.custom_route("/health", methods=["GET"])
+async def health(request: Request) -> JSONResponse:
+    """Report process readiness without querying Google."""
+    return JSONResponse({"status": "ok", "service": "glfi"})
+
+
+def run_http(host: str = "127.0.0.1", port: int = 8000) -> None:
     """Run the MCP server over HTTP (streamable).
 
-    The default host is ``0.0.0.0`` so the server is reachable from outside the
-    container when deployed (e.g. Railway, Docker). When running locally this
-    exposes the server on every network interface — set ``HOST=127.0.0.1`` to
-    restrict it to loopback.
+    Bind to loopback by default. Containers may set ``HOST=0.0.0.0`` behind
+    an authenticated gateway. This server does not provide authentication.
     """
     env_host = os.getenv("HOST")
     env_port = os.getenv("PORT")

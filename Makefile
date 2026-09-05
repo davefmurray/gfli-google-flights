@@ -11,15 +11,15 @@ install-dev:
 	uv sync --extra dev
 
 install-all:
-	uv sync --extra dev
+	uv sync --all-extras
 
 # Run the MCP server
 mcp:
-	uv run fli-mcp
+	uv run glfi-mcp
 
 # Run the MCP server over HTTP
 mcp-http:
-	uv run fli-mcp-http
+	uv run glfi-mcp-http
 
 # Build the docs
 docs:
@@ -38,8 +38,14 @@ lint-fix:
 	uv run --extra dev ruff check --fix $(TARGETS)
 
 # Run tests
-test:
-	uv run --extra dev pytest -vv
+test: test-offline
+test-offline:
+	TERM=xterm-256color uv run --frozen --all-extras pytest tests/ --all -q \
+		--ignore=tests/search/test_search_flights.py \
+		--ignore=tests/search/test_search_dates.py \
+		--ignore=tests/search/test_search_flights_fuzz.py \
+		--ignore=tests/search/test_search_flights_new_filters_live.py \
+		--ignore=tests/mcp/test_mcp_server.py
 test-mcp:
 	uv run --extra dev pytest -vv --mcp
 test-fuzz:
@@ -113,4 +119,4 @@ help:
 	@echo "  make bump-preview - Preview next version (patch/minor/major)"
 	@echo "  make release-notes - Preview release notes since last tag"
 # Declare the targets as phony
-.PHONY: help install install-dev install-all mcp mcp-http docs format lint lint-fix test test-mcp test-fuzz test-all ci ci-docker devcontainer requirements bump-preview release-notes
+.PHONY: help install install-dev install-all mcp mcp-http docs format lint lint-fix test test-offline test-mcp test-fuzz test-all ci ci-docker devcontainer requirements bump-preview release-notes

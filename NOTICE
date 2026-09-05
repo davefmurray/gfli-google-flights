@@ -1,0 +1,14 @@
+GLFI is an independently maintained derivative of Fli:
+https://github.com/punitarani/fli
+
+Original software: Copyright (c) 2025 Punit Arani, under the MIT License.
+The original license is preserved in LICENSE.txt and fli-js/LICENSE.
+GLFI changes: Copyright (c) 2026 Dave Murray, under the MIT License.
+
+This baseline incorporates upstream contributions with their Git history:
+- PR #230: public search-page transport and explicit unsupported-search errors.
+- PR #231: preserve cabin class in booking deep links.
+- PR #232: decode legroom independently of Wi-Fi tier.
+
+GLFI is not affiliated with or endorsed by Google. It uses unofficial,
+reverse-engineered Google Flights endpoints, which may change or stop working.

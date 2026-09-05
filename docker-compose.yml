@@ -1,8 +1,9 @@
 services:
-  fli-mcp:
-    image: ghcr.io/punitarani/fli:latest
+  glfi-mcp:
+    build: .
+    image: glfi:local
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     environment:
       HOST: "0.0.0.0"
       PORT: "8000"

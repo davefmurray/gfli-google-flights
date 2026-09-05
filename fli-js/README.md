@@ -1,15 +1,17 @@
-# fli (TypeScript)
+# GLFI TypeScript (Experimental)
 
-A 1:1 TypeScript / JavaScript port of the [Python `fli` library](https://github.com/punitarani/fli).
+Inherited from the [Fli TypeScript library](https://github.com/punitarani/fli).
 
-Programmatic access to Google Flights data via direct API interaction (no
-scraping). The API surface mirrors the Python package — same models, same
-filter encoding, same wire-format decoders.
+**Not released.** The Python public search-page transport has not been ported
+here. Offline tests pass, but live search is not supported for GLFI's first
+release. The package is marked private to prevent accidental publication.
+The API examples below are inherited reference material, not verified live workflows.
 
-## Install
+## Local Development
 
 ```bash
-npm i fli-js   # or: pnpm add fli-js / yarn add fli-js / bun add fli-js
+bun install
+bun run ci
 ```
 
 ## Quick start
@@ -24,7 +26,7 @@ import {
   SearchFlights,
   SeatType,
   SortBy,
-} from "fli-js";
+} from "glfi-js";
 
 const filters = new FlightSearchFilters({
   passenger_info: { adults: 1, children: 0, infants_in_seat: 0, infants_on_lap: 0 },
@@ -47,7 +49,7 @@ console.log(results);
 ### Date-range search
 
 ```ts
-import { Airport, DateSearchFilters, FlightSegment, SearchDates } from "fli-js";
+import { Airport, DateSearchFilters, FlightSegment, SearchDates } from "glfi-js";
 
 const filters = new DateSearchFilters({
   passenger_info: { adults: 1, children: 0, infants_in_seat: 0, infants_on_lap: 0 },
@@ -71,7 +73,7 @@ Turn search results into clickable Google Flights links — no extra network
 call, fully deterministic.
 
 ```ts
-import { googleFlightsUrl, SearchFlights } from "fli-js";
+import { googleFlightsUrl, SearchFlights } from "glfi-js";
 
 const search = new SearchFlights();
 const results = await search.search(filters, { currency: "USD" });
@@ -106,7 +108,7 @@ The TypeScript port uses native `fetch` (Bun's built-in) and replaces
   explicit `proxy` option on `new Client({...})`).
 
 ```ts
-import { Client, SearchFlights } from "fli-js";
+import { Client, SearchFlights } from "glfi-js";
 
 const search = new SearchFlights(
   new Client({ proxy: "http://user:pass@proxy.example.com:8080" }),

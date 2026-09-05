@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
-"""CLI entry point for the fli flight search tool."""
+"""CLI entry point for GLFI."""
 
 import sys
+from importlib.metadata import version
+from typing import Annotated
 
 import typer
 
@@ -11,7 +13,7 @@ from fli.cli.commands.flights import flights
 from fli.cli.commands.multi import multi
 
 app = typer.Typer(
-    help="Search for flights using Google Flights data",
+    help="GLFI: flight search for your terminal and AI assistants.",
     add_completion=True,
 )
 
@@ -22,14 +24,27 @@ app.command(name="flights")(flights)
 app.command(name="multi")(multi)
 
 
+def _show_version(value: bool) -> None:
+    """Print the installed distribution version and exit."""
+    if value:
+        typer.echo(f"glfi {version('glfi')}")
+        raise typer.Exit()
+
+
 @app.callback(invoke_without_command=True)
-def main(ctx: typer.Context):
+def main(
+    ctx: typer.Context,
+    show_version: Annotated[
+        bool,
+        typer.Option("--version", callback=_show_version, is_eager=True, help="Show version."),
+    ] = False,
+):
     """Search for flights using Google Flights data.
 
     If no command is provided, show help.
     """
     if ctx.invoked_subcommand is None:
-        ctx.get_help()
+        typer.echo(ctx.get_help())
         raise typer.Exit()
 
 
@@ -47,6 +62,7 @@ def cli():
         "flights",
         "multi",
         "--help",
+        "--version",
         "-h",
         "--show-completion",
         "--install-completion",

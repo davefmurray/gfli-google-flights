@@ -1,9 +1,9 @@
-site_name: Fli Documentation
-site_url: https://punitarani.github.io/fli
-site_description: Documentation for the Fli library - A Python library for direct Google Flights API access
-repo_url: https://github.com/punitarani/fli
-site_author: Punit Arani
-copyright: Copyright &copy; 2024-2026 Punit Arani
+site_name: GLFI Reference Documentation
+site_url: https://davefmurray.github.io/glfi/
+site_description: GLFI flight search reference, including inherited Fli API documentation
+repo_url: https://github.com/davefmurray/glfi
+site_author: Dave Murray and Fli contributors
+copyright: Copyright &copy; 2025 Punit Arani. GLFI changes &copy; 2026 Dave Murray.
 
 theme:
   name: material

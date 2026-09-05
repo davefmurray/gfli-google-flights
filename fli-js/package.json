@@ -1,7 +1,8 @@
 {
-  "name": "fli-js",
-  "version": "0.0.4",
-  "description": "TypeScript port of the fli library: programmatic access to Google Flights data through direct API interaction.",
+  "name": "glfi-js",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Experimental GLFI TypeScript client. Live search transport is pending repair.",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -62,12 +63,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/punitarani/fli.git",
+    "url": "git+https://github.com/davefmurray/glfi.git",
     "directory": "fli-js"
   },
-  "homepage": "https://github.com/punitarani/fli/tree/main/fli-js#readme",
+  "homepage": "https://github.com/davefmurray/glfi/tree/main/fli-js#readme",
   "bugs": {
-    "url": "https://github.com/punitarani/fli/issues"
+    "url": "https://github.com/davefmurray/glfi/issues"
   },
   "publishConfig": {
     "access": "public",

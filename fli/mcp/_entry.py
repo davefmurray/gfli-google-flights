@@ -1,6 +1,6 @@
 """Thin entry-point wrappers for the MCP server commands.
 
-These wrappers exist so that the ``fli-mcp`` and ``fli-mcp-http`` console
+These wrappers exist so that the ``glfi-mcp`` and ``glfi-mcp-http`` console
 scripts can be registered unconditionally in ``pyproject.toml`` while still
 giving a helpful error message when the optional ``[mcp]`` dependencies are
 not installed.
@@ -15,7 +15,7 @@ def run() -> None:
         from fli.mcp.server import run as _run
     except ModuleNotFoundError:
         print(
-            "MCP dependencies are not installed.\nInstall them with:  pip install 'flights[mcp]'",
+            "MCP dependencies are not installed.\nInstall them with:  pip install 'glfi[mcp]'",
             file=sys.stderr,
         )
         sys.exit(1)
@@ -28,7 +28,7 @@ def run_http() -> None:
         from fli.mcp.server import run_http as _run_http
     except ModuleNotFoundError:
         print(
-            "MCP dependencies are not installed.\nInstall them with:  pip install 'flights[mcp]'",
+            "MCP dependencies are not installed.\nInstall them with:  pip install 'glfi[mcp]'",
             file=sys.stderr,
         )
         sys.exit(1)

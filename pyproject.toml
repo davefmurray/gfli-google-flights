@@ -1,10 +1,11 @@
 [project]
-name = "flights"
-version = "0.10.0"
-description = "A Python wrapper for Google Flights API"
+name = "glfi"
+version = "0.1.0"
+description = "GLFI: flight search for your terminal and AI assistants"
 authors = [
     { name = "Punit Arani", email = "punitsai36@gmail.com" }
 ]
+maintainers = [{ name = "Dave Murray" }]
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.10"
@@ -24,6 +25,7 @@ classifiers = [
 
 dependencies = [
     "babel>=2.17.0",
+    "click>=8.1.0",
     "curl-cffi>=0.7.4",
     "httpx>=0.28.1",
     "plotext>=5.3.2",
@@ -42,7 +44,7 @@ mcp = [
     "uvicorn>=0.34.0",
 ]
 all = [
-    "flights[mcp]",
+    "glfi[mcp]",
 ]
 dev = [
     "mkdocs-material[imaging]>=9.5.49",
@@ -52,18 +54,18 @@ dev = [
     "pytest-xdist>=3.6.1",
     "pytest-cov>=6.0.0",
     "ruff>=0.8.4",
-    "twine>=6.0.0",
+    "twine>=7.0.0",
 ]
 
 [project.scripts]
-fli = "fli.cli:cli"
-fli-mcp = "fli.mcp._entry:run"
-fli-mcp-http = "fli.mcp._entry:run_http"
+glfi = "fli.cli:cli"
+glfi-mcp = "fli.mcp._entry:run"
+glfi-mcp-http = "fli.mcp._entry:run_http"
 
 [project.urls]
-Homepage = "https://github.com/punitarani/fli"
-Repository = "https://github.com/punitarani/fli"
-Documentation = "https://punitarani.github.io/fli"
+Homepage = "https://github.com/davefmurray/glfi"
+Repository = "https://github.com/davefmurray/glfi"
+Documentation = "https://github.com/davefmurray/glfi#readme"
 
 [build-system]
 requires = ["hatchling"]

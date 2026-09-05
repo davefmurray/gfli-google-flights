@@ -5,7 +5,7 @@ COPY --from=ghcr.io/astral-sh/uv:0.6.0 /uv /bin/uv
 
 WORKDIR /app
 
-COPY pyproject.toml uv.lock README.md ./
+COPY pyproject.toml uv.lock README.md LICENSE.txt NOTICE ./
 COPY fli/ ./fli/
 
 RUN uv sync --frozen --no-dev --no-cache --extra mcp
@@ -32,4 +32,4 @@ EXPOSE 8000
 RUN useradd --no-create-home --shell /bin/false appuser
 USER appuser
 
-CMD ["fli-mcp-http"]
+CMD ["glfi-mcp-http"]
