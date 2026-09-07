@@ -15,11 +15,11 @@ install-all:
 
 # Run the MCP server
 mcp:
-	uv run glfi-mcp
+	uv run gfli-mcp
 
 # Run the MCP server over HTTP
 mcp-http:
-	uv run glfi-mcp-http
+	uv run gfli-mcp-http
 
 # Build the docs
 docs:
@@ -55,17 +55,17 @@ test-all:
 
 # Online advisory audit; separate from deterministic tests.
 audit:
-	uv export --quiet --frozen --all-extras --no-emit-project --output-file /tmp/glfi-audit-requirements.txt
-	uvx --python 3.10 pip-audit==2.10.1 --require-hashes --disable-pip -r /tmp/glfi-audit-requirements.txt
-	uvx --python 3.13 pip-audit==2.10.1 --require-hashes --disable-pip -r /tmp/glfi-audit-requirements.txt
+	uv export --quiet --frozen --all-extras --no-emit-project --output-file /tmp/gfli-audit-requirements.txt
+	uvx --python 3.10 pip-audit==2.10.1 --require-hashes --disable-pip -r /tmp/gfli-audit-requirements.txt
+	uvx --python 3.13 pip-audit==2.10.1 --require-hashes --disable-pip -r /tmp/gfli-audit-requirements.txt
 
 verify-install:
 	uv run --frozen python scripts/check_release.py
 	uv build
-	uv run --frozen twine check dist/glfi-*.whl dist/glfi-*.tar.gz
-	uv run --frozen python scripts/verify_install.py dist/glfi-*.whl
-	uv run --frozen python scripts/verify_install.py dist/glfi-*.whl --mcp
-	uv run --frozen python scripts/verify_install.py dist/glfi-*.tar.gz --mcp
+	uv run --frozen twine check dist/gfli-*.whl dist/gfli-*.tar.gz
+	uv run --frozen python scripts/verify_install.py dist/gfli-*.whl
+	uv run --frozen python scripts/verify_install.py dist/gfli-*.whl --mcp
+	uv run --frozen python scripts/verify_install.py dist/gfli-*.tar.gz --mcp
 
 # Run CI locally using act (requires Docker and act: https://github.com/nektos/act)
 ci:

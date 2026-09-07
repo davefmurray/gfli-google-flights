@@ -101,7 +101,7 @@ class TestMCPHTTP:
         url = http_mcp_url.removesuffix("mcp/") + "health"
         response = httpx.get(url)
         assert response.status_code == 200
-        assert response.json() == {"status": "ok", "service": "glfi"}
+        assert response.json() == {"status": "ok", "service": "gfli"}
 
     @pytest.mark.asyncio
     async def test_http_list_tools(self, http_mcp_url):

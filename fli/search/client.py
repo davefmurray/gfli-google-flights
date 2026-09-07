@@ -59,29 +59,29 @@ _client_lock = threading.Lock()
 # Google's published ceiling.
 DEFAULT_CALLS_PER_SECOND = 10
 
-# Request timeout in seconds.  Override with the GLFI_TIMEOUT env var.
+# Request timeout in seconds.  Override with the GFLI_TIMEOUT env var.
 DEFAULT_TIMEOUT: float = 60.0
-_env_timeout = os.environ.get("GLFI_TIMEOUT")
+_env_timeout = os.environ.get("GFLI_TIMEOUT")
 if _env_timeout is not None:
     try:
         REQUEST_TIMEOUT: float = float(_env_timeout)
     except ValueError:
-        msg = f"GLFI_TIMEOUT must be a number of seconds, got: {_env_timeout!r}"
+        msg = f"GFLI_TIMEOUT must be a number of seconds, got: {_env_timeout!r}"
         raise ValueError(msg) from None
     if not math.isfinite(REQUEST_TIMEOUT) or REQUEST_TIMEOUT <= 0:
-        raise ValueError(f"GLFI_TIMEOUT must be a positive number, got: {_env_timeout!r}")
+        raise ValueError(f"GFLI_TIMEOUT must be a positive number, got: {_env_timeout!r}")
 else:
     REQUEST_TIMEOUT = DEFAULT_TIMEOUT
 
 # EU/EEA IPs are redirected to Google's consent interstitial, which serves a
 # page with no ds:1 payload — every search then fails to parse. A pre-accepted
 # SOCS cookie skips the interstitial (the legacy CONSENT cookie no longer
-# works, and a truncated SOCS value is ignored). Override with GLFI_SOCS_COOKIE
+# works, and a truncated SOCS value is ignored). Override with GFLI_SOCS_COOKIE
 # if Google rotates the value; set it empty to send no cookie at all.
 DEFAULT_SOCS_COOKIE = (
     "CAISNQgQEitib3FfaWRlbnRpdHlmcm9udGVuZHVpc2VydmVyXzIwMjQwMzE3LjA5X3AwGgJlbiADGgYIgLC_rwY"
 )
-SOCS_COOKIE = os.environ.get("GLFI_SOCS_COOKIE", DEFAULT_SOCS_COOKIE)
+SOCS_COOKIE = os.environ.get("GFLI_SOCS_COOKIE", DEFAULT_SOCS_COOKIE)
 
 
 class Client:

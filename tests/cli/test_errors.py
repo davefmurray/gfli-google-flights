@@ -25,7 +25,7 @@ def runner() -> CliRunner:
 
 @pytest.fixture(autouse=True)
 def _isolated_tmp_log_dir(monkeypatch, tmp_path):
-    """Redirect _LOG_DIR so log files land under tmp_path instead of ~/.glfi/logs/."""
+    """Redirect _LOG_DIR so log files land under tmp_path instead of ~/.gfli/logs/."""
     monkeypatch.setattr("fli.cli.errors._LOG_DIR", tmp_path / "fli-logs")
 
 
@@ -113,7 +113,7 @@ def test_report_cli_error_returns_typer_exit_and_writes_log(tmp_path, capsys):
     assert result.exit_code == 1
 
     # A log file should now exist under our redirected tmp dir.
-    log_files = list((tmp_path / "fli-logs").glob("glfi-error-*.log"))
+    log_files = list((tmp_path / "fli-logs").glob("gfli-error-*.log"))
     assert len(log_files) == 1
 
 
@@ -138,7 +138,7 @@ def test_search_command_handles_timeout_cleanly(runner, monkeypatch, tmp_path):
     assert "Full traceback written to" in result.output
     assert "Traceback (most recent call last)" not in result.output
 
-    log_files = list((tmp_path / "fli-logs").glob("glfi-error-*.log"))
+    log_files = list((tmp_path / "fli-logs").glob("gfli-error-*.log"))
     assert len(log_files) >= 1
 
 

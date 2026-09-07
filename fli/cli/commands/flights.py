@@ -611,15 +611,15 @@ def flights(
     """Search for flights on a specific date.
 
     Example:
-        glfi flights JFK LHR 2026-10-25 --time 6-20 --airlines BA,KL --stops NON_STOP
-        glfi flights JFK LHR 2026-10-25 --format json
-        glfi flights JFK LHR 2026-10-25 --exclude-basic
-        glfi flights JFK LAX 2026-10-25 --bags 1 --carry-on
-        glfi flights JFK LAX 2026-10-25 --emissions LESS
-        glfi flights JFK LAX 2026-10-25 --all
-        glfi flights JFK FRA 2026-10-25 --alliance ONEWORLD
-        glfi flights JFK LAX 2026-10-25 --exclude-airlines DL
-        glfi flights BUF ATH 2026-10-25 --min-layover 120
+        gfli flights JFK LHR 2026-10-25 --time 6-20 --airlines BA,KL --stops NON_STOP
+        gfli flights JFK LHR 2026-10-25 --format json
+        gfli flights JFK LHR 2026-10-25 --exclude-basic
+        gfli flights JFK LAX 2026-10-25 --bags 1 --carry-on
+        gfli flights JFK LAX 2026-10-25 --emissions LESS
+        gfli flights JFK LAX 2026-10-25 --all
+        gfli flights JFK FRA 2026-10-25 --alliance ONEWORLD
+        gfli flights JFK LAX 2026-10-25 --exclude-airlines DL
+        gfli flights BUF ATH 2026-10-25 --min-layover 120
 
     """
     _search_flights_core(

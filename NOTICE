@@ -1,9 +1,9 @@
-GLFI is an independently maintained derivative of Fli:
+GFLI is an independently maintained derivative of Fli:
 https://github.com/punitarani/fli
 
 Original software: Copyright (c) 2025 Punit Arani, under the MIT License.
 The original license is preserved in LICENSE.txt and fli-js/LICENSE.
-GLFI changes: Copyright (c) 2026 Dave Murray, under the MIT License.
+GFLI changes: Copyright (c) 2026 Dave Murray, under the MIT License.
 
 This baseline incorporates upstream contributions with their Git history:
 - PR #230: public search-page transport and explicit unsupported-search errors.
@@ -11,11 +11,11 @@ This baseline incorporates upstream contributions with their Git history:
 - PR #232: decode legroom independently of Wi-Fi tier.
 
 Pre-launch work also incorporates:
-- PR #160: disambiguate enum names; GLFI regenerates and tests the shipped data.
+- PR #160: disambiguate enum names; GFLI regenerates and tests the shipped data.
 - PR #215: same-day date validation and actionable MCP validation errors.
 - PR #103: adult, child, and infant controls in CLI and MCP.
 
-GLFI additionally applies the patched curl-cffi dependency floor described in
+GFLI additionally applies the patched curl-cffi dependency floor described in
 PR #193, preserves party size in flight booking links and MCP booking tools,
 and repairs same-day and filter handling in the public-page date-scan transport.
 
@@ -23,7 +23,7 @@ The second pre-launch batch adapts the upstream proposals:
 - PR #195 (880ce1a): flexible trip-duration ranges.
 - PR #196 (2779bee): independent return-time controls and builder sentinel design.
 - PR #199 (23a9843): comma-separated multi-airport CLI inputs.
-These PR heads were reviewed but not merged. GLFI supplies shared bounded range
+These PR heads were reviewed but not merged. GFLI supplies shared bounded range
 execution, strict airport parsing, full-route search links, return-date pricing
 integration, and nested-worker deadlock prevention for the current transport.
 Selected-return fares also replace outbound starting fares in round-trip output
@@ -36,5 +36,5 @@ scripts/probe_explore.py adapts only the diagnostic request shape from PR #226
 (0567a3a). That PR is not merged; Explore transport remains blocked in live tests
 and no Explore library, CLI, or MCP feature is shipped.
 
-GLFI is not affiliated with or endorsed by Google. It uses unofficial,
+GFLI is not affiliated with or endorsed by Google. It uses unofficial,
 reverse-engineered Google Flights endpoints, which may change or stop working.

@@ -49,7 +49,7 @@ from fli.search.links import search_url
 class FlightSearchConfig(BaseSettings):
     """Optional configuration for the Flight Search MCP server."""
 
-    model_config = SettingsConfigDict(env_prefix="GLFI_MCP_")
+    model_config = SettingsConfigDict(env_prefix="GFLI_MCP_")
 
     default_passengers: int = Field(
         1,
@@ -86,7 +86,7 @@ CONFIG_SCHEMA = FlightSearchConfig.model_json_schema()
 
 
 mcp = FastMCP(
-    "GLFI",
+    "GFLI",
     icons=[
         Icon(
             src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48dGV4dCB5PSIuOWVtIiBmb250LXNpemU9IjkwIj7inIjvuI88L3RleHQ+PC9zdmc+",
@@ -1810,8 +1810,8 @@ def find_budget_window_prompt(
 
 
 @mcp.resource(
-    "resource://glfi-mcp/configuration",
-    name="GLFI MCP Configuration",
+    "resource://gfli-mcp/configuration",
+    name="GFLI MCP Configuration",
     description=(
         "Optional configuration defaults and environment variables for the Flight "
         "Search MCP server."
@@ -1824,14 +1824,14 @@ def configuration_resource() -> str:
         "defaults": CONFIG.model_dump(),
         "schema": CONFIG_SCHEMA,
         "environment": {
-            "prefix": "GLFI_MCP_",
+            "prefix": "GFLI_MCP_",
             "variables": {
-                "GLFI_MCP_DEFAULT_PASSENGERS": "Adjust the default passenger count.",
-                "GLFI_MCP_DEFAULT_CURRENCY": "Override the fallback currency code for results.",
-                "GLFI_MCP_DEFAULT_CABIN_CLASS": "Set a default cabin class.",
-                "GLFI_MCP_DEFAULT_SORT_BY": "Set the default result sorting strategy.",
-                "GLFI_MCP_DEFAULT_DEPARTURE_WINDOW": "Provide a default departure window (HH-HH).",
-                "GLFI_MCP_MAX_RESULTS": "Limit the maximum number of results returned by tools.",
+                "GFLI_MCP_DEFAULT_PASSENGERS": "Adjust the default passenger count.",
+                "GFLI_MCP_DEFAULT_CURRENCY": "Override the fallback currency code for results.",
+                "GFLI_MCP_DEFAULT_CABIN_CLASS": "Set a default cabin class.",
+                "GFLI_MCP_DEFAULT_SORT_BY": "Set the default result sorting strategy.",
+                "GFLI_MCP_DEFAULT_DEPARTURE_WINDOW": "Provide a default departure window (HH-HH).",
+                "GFLI_MCP_MAX_RESULTS": "Limit the maximum number of results returned by tools.",
             },
         },
     }
@@ -1851,7 +1851,7 @@ def run():
 @mcp.custom_route("/health", methods=["GET"])
 async def health(request: Request) -> JSONResponse:
     """Report process readiness without querying Google."""
-    return JSONResponse({"status": "ok", "service": "glfi"})
+    return JSONResponse({"status": "ok", "service": "gfli"})
 
 
 def run_http(host: str = "127.0.0.1", port: int = 8000) -> None:

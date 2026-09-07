@@ -22,10 +22,10 @@ def airports(
     """Search for airports by city name, airport name, or IATA code.
 
     Example:
-        glfi airports "new york"
-        glfi airports tokyo
-        glfi airports JFK
-        glfi airports heathrow
+        gfli airports "new york"
+        gfli airports tokyo
+        gfli airports JFK
+        gfli airports heathrow
 
     """
     results = search_airports(query, limit=limit)

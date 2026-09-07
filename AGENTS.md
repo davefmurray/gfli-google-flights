@@ -1,8 +1,8 @@
-# GLFI Development
+# GFLI Development
 
-GLFI is an independent MIT-licensed derivative of punitarani/fli. Preserve
+GFLI is an independent MIT-licensed derivative of punitarani/fli. Preserve
 upstream history and license notices. Public commands and distribution use
-`glfi`; Python imports stay under `fli` for now. Do not install the original
+`gfli`; Python imports stay under `fli` for now. Do not install the original
 `flights` distribution in the same environment.
 
 ## Commands
@@ -10,9 +10,9 @@ upstream history and license notices. Public commands and distribution use
 - Dependencies: `uv sync --all-extras`
 - Lint: `make lint`
 - Deterministic tests: `make test-offline`
-- CLI: `uv run glfi --help`
-- MCP stdio: `uv run glfi-mcp`
-- MCP HTTP: `uv run glfi-mcp-http` (loopback by default, port 8000)
+- CLI: `uv run gfli --help`
+- MCP stdio: `uv run gfli-mcp`
+- MCP HTTP: `uv run gfli-mcp-http` (loopback by default, port 8000)
 - Build: `uv build`
 - TypeScript offline checks: `cd fli-js && bun install && bun run ci`
 

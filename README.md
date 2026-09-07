@@ -1,8 +1,8 @@
-# GLFI
+# GFLI
 
 **Find a better flight. Keep your standards.**
 
-[![CI](https://github.com/davefmurray/glfi/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/davefmurray/glfi/actions/workflows/ci.yml)
+[![CI](https://github.com/davefmurray/gfli/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/davefmurray/gfli/actions/workflows/ci.yml)
 [![Python 3.10-3.13](https://img.shields.io/badge/python-3.10%20%E2%80%93%203.13-3776AB)](pyproject.toml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-16803C)](LICENSE.txt)
 
@@ -13,7 +13,7 @@ connections, and save the whole search for next time.
 **One CLI. Seven MCP tools. No Google API key. No database.**
 
 ```sh
-glfi JAX IAD 2026-10-15 \
+gfli JAX IAD 2026-10-15 \
   --starlink possible --starlink-premium \
   --min-layover 60 --max-layover 180 \
   --no-overnight-layovers
@@ -39,33 +39,39 @@ glfi JAX IAD 2026-10-15 \
 
 ## Install
 
+The project name is **GFLI** (`gfli`); the earlier `glfi` spelling was a typo.
+If you installed that preview, uninstall it before installing `gfli`, update
+your MCP command and `GLFI_*` environment variables to `GFLI_*`, and move any
+saved presets from `~/.config/glfi/presets` to `~/.config/gfli/presets`
+(or the equivalent directory under `XDG_CONFIG_HOME`).
+
 Requires [uv](https://docs.astral.sh/uv/getting-started/installation/).
-GLFI supports **Python 3.10-3.13**; this command selects 3.11 and installs into an
+GFLI supports **Python 3.10-3.13**; this command selects 3.11 and installs into an
 isolated tool environment:
 
 ```sh
 uv tool install --python 3.11 \
-  'glfi[mcp] @ git+https://github.com/davefmurray/glfi.git'
+  'gfli[mcp] @ git+https://github.com/davefmurray/gfli.git'
 
-glfi --version
-glfi doctor
+gfli --version
+gfli doctor
 ```
 
-That installs `glfi`, `glfi-mcp`, and `glfi-mcp-http`. Omit `[mcp]` for the
+That installs `gfli`, `gfli-mcp`, and `gfli-mcp-http`. Omit `[mcp]` for the
 CLI without optional server dependencies. If your shell cannot find the commands,
 run `uv tool update-shell` and restart it.
 
 Prefer a checkout?
 
 ```sh
-git clone https://github.com/davefmurray/glfi.git
-cd glfi
+git clone https://github.com/davefmurray/gfli.git
+cd gfli
 uv tool install --python 3.11 '.[mcp]'
 ```
 
 To refresh a source installation, rerun the GitHub install command with
 `--force --reinstall`. For a reproducible installation, append `@COMMIT_SHA` to
-the Git URL. **Do not install `glfi` from PyPI until a package release is announced.**
+the Git URL. **Do not install `gfli` from PyPI until a package release is announced.**
 
 ## First Flights
 
@@ -73,23 +79,23 @@ Use future travel dates in these examples.
 
 ```sh
 # Find an airport.
-glfi airports Jacksonville
+gfli airports Jacksonville
 
 # One way. "flights" is the default command.
-glfi JAX JFK 2026-10-15
+gfli JAX JFK 2026-10-15
 
 # Two adults, one child, multiple destination airports.
-glfi JAX JFK,LGA 2026-10-15 --adults 2 --children 1
+gfli JAX JFK,LGA 2026-10-15 --adults 2 --children 1
 
 # Morning outbound, evening return.
-glfi JAX JFK 2026-10-15 --return 2026-10-19 \
+gfli JAX JFK 2026-10-15 --return 2026-10-19 \
   --time 6-12 --return-time 16-23
 
 # Structured output for scripts and agents.
-glfi JAX JFK 2026-10-15 --format json
+gfli JAX JFK 2026-10-15 --format json
 ```
 
-Cabin, airline, alliance, stop, and locale options: `glfi flights --help`.
+Cabin, airline, alliance, stop, and locale options: `gfli flights --help`.
 Passenger flags also include `--infants-in-seat` and `--infants-on-lap`;
 `--passengers`, `--adults`, and `-p` all mean adult count.
 
@@ -100,9 +106,9 @@ mix, and selected flights. Always confirm the final fare with the seller.
 ## Starlink Finder
 
 ```sh
-glfi JAX IAD 2026-10-15 --starlink possible
-glfi DOH LHR 2026-10-15 --return 2026-10-19 --starlink likely
-glfi starlink
+gfli JAX IAD 2026-10-15 --starlink possible
+gfli DOH LHR 2026-10-15 --return 2026-10-19 --starlink likely
+gfli starlink
 ```
 
 | Mode | Meaning |
@@ -117,7 +123,7 @@ does not mean absent.
 
 Initial coverage includes selected **Hawaiian, Qatar, and United/United Express**
 aircraft. Results carry the reason, source URL, checked date, and review deadline.
-`glfi starlink --json` exposes the exact catalog; [STARLINK.md](STARLINK.md)
+`gfli starlink --json` exposes the exact catalog; [STARLINK.md](STARLINK.md)
 documents the aircraft scopes and evidence.
 
 Evidence was reviewed **September 5, 2026**, with a **December 4, 2026** review
@@ -129,10 +135,10 @@ still change the onboard experience.
 ### What Does Starlink Cost You?
 
 ```sh
-glfi JAX IAD 2026-10-15 --starlink possible --starlink-premium
+gfli JAX IAD 2026-10-15 --starlink possible --starlink-premium
 ```
 
-GLFI compares qualifying flights with the cheapest **known same-currency fare
+GFLI compares qualifying flights with the cheapest **known same-currency fare
 in the same search**, with other filters unchanged. A $243 qualifying fare against
 a $93 baseline is a **$150 premium**. Those figures illustrate the comparison,
 not a fare promise.
@@ -146,7 +152,7 @@ searches, not date grids. JSON/MCP output includes `starlink_premium` with
 ## Connection Controls
 
 ```sh
-glfi JAX LHR 2026-10-15 \
+gfli JAX LHR 2026-10-15 \
   --min-layover 60 --max-layover 180 \
   --exclude-layover JFK,EWR \
   --no-overnight-layovers
@@ -162,7 +168,7 @@ glfi JAX LHR 2026-10-15 \
 
 Bounds are inclusive. Airport flags accept comma-separated codes or repeated
 flags. Nonstop flights remain eligible. Rules apply to both directions and are
-also available on `glfi dates` and MCP flight/date/booking tools.
+also available on `gfli dates` and MCP flight/date/booking tools.
 
 Timing uses airport-local timestamps, so daylight-saving ambiguities remain.
 Airport transfers are excluded when requested timing rules cannot be established.
@@ -171,12 +177,12 @@ Airport transfers are excluded when requested timing rules cannot be established
 
 ```sh
 # Depart within a window, stay three to five days.
-glfi dates JAX JFK,LGA \
+gfli dates JAX JFK,LGA \
   --from 2026-10-15 --to 2026-10-17 \
   --round --min-duration 3 --max-duration 5
 
 # Four-day trip, likely Starlink on every leg.
-glfi dates DOH LHR \
+gfli dates DOH LHR \
   --from 2026-10-15 --to 2026-10-16 \
   --round --duration 4 --starlink likely
 ```
@@ -196,28 +202,28 @@ quotes. The 366 date/stay-combination ceiling is not a 366-request ceiling.
 Set your preferences once. Change the dates when the next trip comes up.
 
 ```sh
-glfi save work-trip -- JAX IAD 2026-10-15 \
+gfli save work-trip -- JAX IAD 2026-10-15 \
   --starlink possible --starlink-premium \
   --no-overnight-layovers
 
-glfi run work-trip
-glfi run work-trip --date 2026-11-05 --format json
+gfli run work-trip
+gfli run work-trip --date 2026-11-05 --format json
 
-glfi presets list
-glfi presets show work-trip
-glfi presets delete work-trip
+gfli presets list
+gfli presets show work-trip
+gfli presets delete work-trip
 ```
 
 Saving performs **no search**. You can also add `--save NAME` to a flight/date
-command, or use `glfi save NAME -- dates ...`. Add `--replace-preset` to the search
+command, or use `gfli save NAME -- dates ...`. Add `--replace-preset` to the search
 arguments to explicitly replace an existing preset.
 
 `run --date` shifts the saved flight dates together; `--return` overrides the
 return. Date-search presets use `--from` and `--to`; changing `--from` shifts the
 window. Overrides are revalidated in memory and **never rewrite the saved file**.
 
-Presets are versioned JSON in `~/.config/glfi/presets`, respecting
-`XDG_CONFIG_HOME` or `GLFI_PRESET_DIR`. Writes are atomic, with owner-only file
+Presets are versioned JSON in `~/.config/gfli/presets`, respecting
+`XDG_CONFIG_HOME` or `GFLI_PRESET_DIR`. Writes are atomic, with owner-only file
 permissions on POSIX. They contain travel preferences and dates, not booking
 tokens or credentials. They are not encrypted. **No background monitoring,
 price alerts, or cloud account is involved.**
@@ -229,15 +235,15 @@ Install with `[mcp]`, then add this entry to your MCP client's configuration:
 ```json
 {
   "mcpServers": {
-    "glfi": {
-      "command": "glfi-mcp"
+    "gfli": {
+      "command": "gfli-mcp"
     }
   }
 }
 ```
 
-If the client does not inherit your shell's `PATH`, replace `glfi-mcp` with the
-absolute path returned by `command -v glfi-mcp`.
+If the client does not inherit your shell's `PATH`, replace `gfli-mcp` with the
+absolute path returned by `command -v gfli-mcp`.
 
 | Tool | Purpose |
 | --- | --- |
@@ -262,13 +268,13 @@ and `no_overnight_layovers`. Starlink premium comparison is flight-search only.
 <summary>Local HTTP transport and configuration</summary>
 
 ```sh
-glfi-mcp-http
+gfli-mcp-http
 ```
 
 MCP endpoint: `http://127.0.0.1:8000/mcp/`. Health: `/health`.
-`HOST` and `PORT` override the bind address. Defaults use `GLFI_MCP_` variables,
-including `GLFI_MCP_DEFAULT_CURRENCY`, `GLFI_MCP_DEFAULT_PASSENGERS`, and
-`GLFI_MCP_MAX_RESULTS`.
+`HOST` and `PORT` override the bind address. Defaults use `GFLI_MCP_` variables,
+including `GFLI_MCP_DEFAULT_CURRENCY`, `GFLI_MCP_DEFAULT_PASSENGERS`, and
+`GFLI_MCP_MAX_RESULTS`.
 
 **HTTP has no built-in authentication. Keep it on loopback.** Public hosting
 requires authentication, abuse controls, and per-user preset isolation. Presets
@@ -276,7 +282,7 @@ belong to the server's OS user, not an authenticated remote caller.
 
 `docker compose up --build` provides a non-root, read-only container with a
 loopback port. See the [container verification gate](RELEASING.md#container-gate)
-and [CI results](https://github.com/davefmurray/glfi/actions/workflows/ci.yml).
+and [CI results](https://github.com/davefmurray/gfli/actions/workflows/ci.yml).
 Container registry publication is not enabled.
 
 </details>
@@ -284,11 +290,11 @@ Container registry publication is not enabled.
 ## Troubleshooting
 
 ```sh
-glfi doctor                   # Local checks only; no network, no file changes.
-glfi doctor --json            # Machine-readable diagnostics.
-glfi doctor --check-provider  # Explicitly test a live search.
-glfi flights --help
-glfi dates --help
+gfli doctor                   # Local checks only; no network, no file changes.
+gfli doctor --json            # Machine-readable diagnostics.
+gfli doctor --check-provider  # Explicitly test a live search.
+gfli flights --help
+gfli dates --help
 ```
 
 Doctor checks installation, dependencies/MCP configuration, preset files, and
@@ -296,14 +302,14 @@ Starlink freshness. Optional-dependency/stale-evidence warnings differ from
 configuration failures. Provider checking runs a nonstop JAX-JFK search 30 days
 ahead, subject to normal retries; it does not verify your MCP client's setup.
 
-`GLFI_TIMEOUT` sets a positive, finite **per-request** timeout in seconds
+`GFLI_TIMEOUT` sets a positive, finite **per-request** timeout in seconds
 (default 60). Retries and multi-request searches can take longer. Error logs
-under `~/.glfi/logs` include arguments and tracebacks: review them before sharing.
+under `~/.gfli/logs` include arguments and tracebacks: review them before sharing.
 
 ## Know The Limits
 
 - **Unofficial provider.** Google changes its endpoints. Consent pages, geography,
-  rate limiting, and provider changes can affect results. GLFI is not affiliated
+  rate limiting, and provider changes can affect results. GFLI is not affiliated
   with Google, Starlink, SpaceX, or any airline.
 - **Errors are not empty results.** Provider, parsing, and unavailable-price errors
   are explicit. CLI JSON uses `error.type`; MCP uses `error_type`. A failed date
@@ -316,7 +322,7 @@ under `~/.glfi/logs` include arguments and tracebacks: review them before sharin
   options currently warn rather than reliably enforce. Do not rely on them.
 - **No multi-city or Explore search.** Their provider paths are unavailable.
   Booking-price RPC can also be rejected; booking deep links remain separate.
-- **Links do not preserve every filter.** GLFI-only Starlink, time, and connection
+- **Links do not preserve every filter.** GFLI-only Starlink, time, and connection
   exclusions may not survive in Google links. Recheck the itinerary before booking.
 - **Timezones and passenger edge cases.** Same-day validation uses a conservative
   UTC-minus-one-day allowance, not airport timezones. Some infant/passenger
@@ -327,8 +333,8 @@ under `~/.glfi/logs` include arguments and tracebacks: review them before sharin
 ## Development
 
 ```sh
-git clone https://github.com/davefmurray/glfi.git
-cd glfi
+git clone https://github.com/davefmurray/gfli.git
+cd gfli
 uv sync --python 3.11 --all-extras
 make lint
 make test-offline
@@ -341,11 +347,11 @@ Python 3.10, 3.11, 3.12, and 3.13**, plus clean wheel/sdist and CLI/MCP checks.
 The badge above reports GitHub CI status separately. Live smoke checks are
 documented in [PRELAUNCH.md](PRELAUNCH.md); they are not uptime guarantees.
 
-The distribution and commands are `glfi`; Python imports remain `fli` for
-upstream compatibility. Do not install GLFI and the original `flights` package
+The distribution and commands are `gfli`; Python imports remain `fli` for
+upstream compatibility. Do not install GFLI and the original `flights` package
 in the same environment. `uv tool` keeps them isolated.
 
-Found a bug? [Open an issue](https://github.com/davefmurray/glfi/issues) with
+Found a bug? [Open an issue](https://github.com/davefmurray/gfli/issues) with
 your version, redacted command, and diagnostic output. Keep travel details and
 credentials out of public reports. Contributions should include regression tests;
 provider failures must never be presented as successful empty searches.
@@ -363,9 +369,9 @@ This README is the supported setup guide.
 
 ## Credits And License
 
-GLFI is an independently maintained derivative of
+GFLI is an independently maintained derivative of
 [Fli](https://github.com/punitarani/fli), created by Punit Arani and its
-contributors. GLFI preserves the upstream history and MIT notices, with
+contributors. GFLI preserves the upstream history and MIT notices, with
 additional work maintained by Dave Murray.
 
 [MIT license](LICENSE.txt). [Attribution and incorporated work](NOTICE).

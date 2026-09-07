@@ -34,10 +34,10 @@ jobs:
       - run: uv build
       - run: uv run --frozen twine check dist/*
       - run: uv run --frozen python scripts/check_release.py
-      - run: uv run --frozen python scripts/verify_install.py dist/glfi-*.whl
-      - run: uv run --frozen python scripts/verify_install.py dist/glfi-*.whl --mcp
+      - run: uv run --frozen python scripts/verify_install.py dist/gfli-*.whl
+      - run: uv run --frozen python scripts/verify_install.py dist/gfli-*.whl --mcp
       - if: matrix.python == '3.12'
-        run: uv run --frozen python scripts/verify_install.py dist/glfi-*.tar.gz --mcp
+        run: uv run --frozen python scripts/verify_install.py dist/gfli-*.tar.gz --mcp
 
   security:
     runs-on: ubuntu-latest
@@ -65,9 +65,9 @@ jobs:
           persist-credentials: false
       - run: docker compose config --quiet
       - run: docker compose up --build --wait --wait-timeout 120
-      - run: docker compose exec -T glfi-mcp glfi --version
+      - run: docker compose exec -T gfli-mcp gfli --version
       - name: Require non-root runtime
-        run: docker compose exec -T glfi-mcp python -c 'import os; assert os.geteuid() != 0'
+        run: docker compose exec -T gfli-mcp python -c 'import os; assert os.geteuid() != 0'
       - name: Show container logs
         if: failure()
         run: docker compose logs

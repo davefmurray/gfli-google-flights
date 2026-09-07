@@ -1,7 +1,7 @@
 [project]
-name = "glfi"
+name = "gfli"
 version = "0.1.0"
-description = "GLFI: flight search for your terminal and AI assistants"
+description = "GFLI: flight search for your terminal and AI assistants"
 authors = [
     { name = "Punit Arani", email = "punitsai36@gmail.com" }
 ]
@@ -45,7 +45,7 @@ mcp = [
     "uvicorn>=0.34.0",
 ]
 all = [
-    "glfi[mcp]",
+    "gfli[mcp]",
 ]
 dev = [
     "mkdocs-material[imaging]>=9.7.7",
@@ -60,14 +60,14 @@ dev = [
 ]
 
 [project.scripts]
-glfi = "fli.cli:cli"
-glfi-mcp = "fli.mcp._entry:run"
-glfi-mcp-http = "fli.mcp._entry:run_http"
+gfli = "fli.cli:cli"
+gfli-mcp = "fli.mcp._entry:run"
+gfli-mcp-http = "fli.mcp._entry:run_http"
 
 [project.urls]
-Homepage = "https://github.com/davefmurray/glfi"
-Repository = "https://github.com/davefmurray/glfi"
-Documentation = "https://github.com/davefmurray/glfi#readme"
+Homepage = "https://github.com/davefmurray/gfli"
+Repository = "https://github.com/davefmurray/gfli"
+Documentation = "https://github.com/davefmurray/gfli#readme"
 
 [build-system]
 requires = ["hatchling"]

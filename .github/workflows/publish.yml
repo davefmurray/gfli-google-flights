@@ -1,4 +1,4 @@
-name: Publish GLFI
+name: Publish GFLI
 
 on:
   workflow_dispatch:
@@ -12,7 +12,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: glfi-publish-${{ github.ref }}
+  group: gfli-publish-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -31,12 +31,12 @@ jobs:
         with:
           version: '0.11.28'
           python-version: '3.12'
-      - name: Require matching GLFI release tag for publishing
+      - name: Require matching GFLI release tag for publishing
         if: inputs.publish
         run: uv run --no-project python scripts/check_release.py --ref "$GITHUB_REF"
       - run: uv build
       - run: uv run --frozen --extra dev twine check dist/*
-      - run: uv run --frozen python scripts/verify_install.py dist/glfi-*.whl --mcp
+      - run: uv run --frozen python scripts/verify_install.py dist/gfli-*.whl --mcp
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: python-dist
@@ -44,13 +44,13 @@ jobs:
           if-no-files-found: error
 
   publish:
-    if: inputs.publish && github.repository == 'davefmurray/glfi'
+    if: inputs.publish && github.repository == 'davefmurray/gfli'
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment:
       name: pypi
-      url: https://pypi.org/project/glfi/
+      url: https://pypi.org/project/gfli/
     permissions:
       id-token: write
     steps:

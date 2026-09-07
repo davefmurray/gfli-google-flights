@@ -18,7 +18,7 @@ runner = CliRunner()
 
 @pytest.fixture(autouse=True)
 def isolated_presets(tmp_path, monkeypatch):
-    monkeypatch.setenv("GLFI_PRESET_DIR", str(tmp_path / "presets"))
+    monkeypatch.setenv("GFLI_PRESET_DIR", str(tmp_path / "presets"))
     monkeypatch.setattr(
         "fli.search.SearchFlights.search",
         lambda *args, **kwargs: pytest.fail("Unexpected network search"),

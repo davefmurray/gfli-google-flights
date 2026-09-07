@@ -1,12 +1,12 @@
-# GLFI Reference Documentation
+# GFLI Reference Documentation
 
 **Migration in progress.** The material below was inherited from Fli and may
-refer to upstream packages or currently unsupported capabilities. For GLFI
+refer to upstream packages or currently unsupported capabilities. For GFLI
 installation, MCP configuration, and live-search limitations, use the
-[GLFI README](https://github.com/davefmurray/glfi#readme). In particular,
+[GFLI README](https://github.com/davefmurray/gfli#readme). In particular,
 multi-city is unavailable, booking-price RPCs may be rejected, and the
 TypeScript search transport has not been repaired. No documentation site
-has been deployed for GLFI yet.
+has been deployed for GFLI yet.
 
 ## Historical Fli Overview
 

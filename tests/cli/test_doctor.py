@@ -13,7 +13,7 @@ from fli.cli.doctor import diagnose
 
 
 def test_offline_doctor_never_searches(monkeypatch, tmp_path):
-    monkeypatch.setenv("GLFI_PRESET_DIR", str(tmp_path / "presets"))
+    monkeypatch.setenv("GFLI_PRESET_DIR", str(tmp_path / "presets"))
     monkeypatch.setattr(
         "fli.search.SearchFlights.search", lambda *args, **kwargs: pytest.fail("Network")
     )
@@ -25,7 +25,7 @@ def test_offline_doctor_never_searches(monkeypatch, tmp_path):
 
 @pytest.mark.parametrize("timeout", ["nan", "0", "not-a-number"])
 def test_real_entrypoint_handles_invalid_timeout_and_redacts_secrets(timeout, tmp_path):
-    command = str(Path(sysconfig.get_path("scripts")) / "glfi")
+    command = str(Path(sysconfig.get_path("scripts")) / "gfli")
     result = subprocess.run(
         [command, "doctor", "--json"],
         capture_output=True,
@@ -33,9 +33,9 @@ def test_real_entrypoint_handles_invalid_timeout_and_redacts_secrets(timeout, tm
         timeout=30,
         env={
             **os.environ,
-            "GLFI_TIMEOUT": timeout,
-            "GLFI_SOCS_COOKIE": "secret-cookie",
-            "GLFI_PRESET_DIR": str(tmp_path),
+            "GFLI_TIMEOUT": timeout,
+            "GFLI_SOCS_COOKIE": "secret-cookie",
+            "GFLI_PRESET_DIR": str(tmp_path),
         },
     )
     assert result.returncode == 1, result.stderr
@@ -48,7 +48,7 @@ def test_real_entrypoint_handles_invalid_timeout_and_redacts_secrets(timeout, tm
 def test_missing_mcp_is_optional_warning(monkeypatch, tmp_path):
     from importlib.util import find_spec
 
-    monkeypatch.setenv("GLFI_PRESET_DIR", str(tmp_path))
+    monkeypatch.setenv("GFLI_PRESET_DIR", str(tmp_path))
     monkeypatch.setattr(
         "fli.cli.doctor.importlib.util.find_spec",
         lambda name: None if name in ("fastmcp", "mcp") else find_spec(name),
@@ -59,7 +59,7 @@ def test_missing_mcp_is_optional_warning(monkeypatch, tmp_path):
 
 
 def test_provider_probe_is_explicit(monkeypatch, tmp_path):
-    monkeypatch.setenv("GLFI_PRESET_DIR", str(tmp_path))
+    monkeypatch.setenv("GFLI_PRESET_DIR", str(tmp_path))
     search = Mock(return_value=[])
     monkeypatch.setattr("fli.search.SearchFlights.search", search)
     result = diagnose(check_provider=True)

@@ -1,9 +1,9 @@
-site_name: GLFI Reference Documentation
-site_url: https://davefmurray.github.io/glfi/
-site_description: GLFI flight search reference, including inherited Fli API documentation
-repo_url: https://github.com/davefmurray/glfi
+site_name: GFLI Reference Documentation
+site_url: https://davefmurray.github.io/gfli/
+site_description: GFLI flight search reference, including inherited Fli API documentation
+repo_url: https://github.com/davefmurray/gfli
 site_author: Dave Murray and Fli contributors
-copyright: Copyright &copy; 2025 Punit Arani. GLFI changes &copy; 2026 Dave Murray.
+copyright: Copyright &copy; 2025 Punit Arani. GFLI changes &copy; 2026 Dave Murray.
 
 theme:
   name: material

@@ -619,7 +619,7 @@ wheels = [
 ]
 
 [[package]]
-name = "glfi"
+name = "gfli"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
@@ -669,7 +669,7 @@ requires-dist = [
     { name = "curl-cffi", specifier = ">=0.15.0" },
     { name = "fastapi", marker = "extra == 'mcp'", specifier = ">=0.141.1" },
     { name = "fastmcp", marker = "extra == 'mcp'", specifier = ">=3.2,<5" },
-    { name = "glfi", extras = ["mcp"], marker = "extra == 'all'" },
+    { name = "gfli", extras = ["mcp"], marker = "extra == 'all'" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "mcp", marker = "extra == 'mcp'", specifier = ">=1.28.1" },
     { name = "mkdocs-material", extras = ["imaging"], marker = "extra == 'dev'", specifier = ">=9.7.7" },

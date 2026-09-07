@@ -1,7 +1,7 @@
-# Releasing GLFI
+# Releasing GFLI
 
 Nothing is published automatically. The initial Python version is 0.1.0.
-Inherited `v*` tags belong to Fli, not GLFI. Use `glfi-vX.Y.Z` for our releases.
+Inherited `v*` tags belong to Fli, not GFLI. Use `gfli-vX.Y.Z` for our releases.
 
 ## Before Publishing
 
@@ -10,8 +10,8 @@ not authorize PyPI, container-registry, or public service publication. Obtain an
 explicit package release decision and require successful remote CI/container
 verification before releasing artifacts.
 
-1. Confirm `glfi` can be registered on PyPI. A metadata 404 is not a reservation.
-2. Configure a PyPI trusted publisher for `davefmurray/glfi`, workflow `publish.yml`,
+1. Confirm `gfli` can be registered on PyPI. A metadata 404 is not a reservation.
+2. Configure a PyPI trusted publisher for `davefmurray/gfli`, workflow `publish.yml`,
    environment `pypi`. Protect that GitHub environment with required approval.
 3. Update `pyproject.toml`, run `uv lock`, and commit the matching version and lockfile.
 4. Run `make lint`, `make test-offline`, `make audit`, and a small live search from
@@ -19,15 +19,15 @@ verification before releasing artifacts.
 5. Run `make verify-install` with only the intended version's artifacts in `dist/`.
    It builds wheel/sdist, runs Twine, and tests disposable core and MCP installs
    outside the source tree. No Google calls or global installations are made.
-6. Tag the tested commit `glfi-vX.Y.Z`. Dispatch **Publish GLFI** on that tag,
+6. Tag the tested commit `gfli-vX.Y.Z`. Dispatch **Publish GFLI** on that tag,
    initially leaving `publish=false` to inspect the build artifact. Then dispatch
    on the same tag with `publish=true` after the environment is configured.
 7. Announce the release and replace the pre-release installation note in README.
 
 The workflow is manual-only with `publish=false` by default. Publishing additionally
-requires the exact `glfi-vVERSION` tag matching project and lockfile, the owned
-`davefmurray/glfi` repository, successful verification jobs, and the `pypi`
-environment. Configure required reviewers and restrict that environment to GLFI
+requires the exact `gfli-vVERSION` tag matching project and lockfile, the owned
+`davefmurray/gfli` repository, successful verification jobs, and the `pypi`
+environment. Configure required reviewers and restrict that environment to GFLI
 release tags in GitHub; YAML cannot configure those account-side protections.
 Third-party actions are commit-pinned and checkout credentials are not persisted.
 
@@ -42,8 +42,8 @@ On a Docker-equipped host, run:
 ```sh
 docker compose config --quiet
 docker compose up --build --wait --wait-timeout 120
-docker compose exec -T glfi-mcp glfi --version
-docker compose exec -T glfi-mcp python -c 'import os; assert os.geteuid() != 0'
+docker compose exec -T gfli-mcp gfli --version
+docker compose exec -T gfli-mcp python -c 'import os; assert os.geteuid() != 0'
 docker compose down
 ```
 
@@ -60,9 +60,9 @@ is included in this baseline. Configure authentication before any such deploymen
 Once PyPI is live, other users can install with:
 
 ```sh
-uv tool install 'glfi[mcp]'
+uv tool install 'gfli[mcp]'
 # Or:
-pipx install 'glfi[mcp]'
+pipx install 'gfli[mcp]'
 ```
 
-Upgrade with `uv tool upgrade glfi` or `pipx upgrade glfi` respectively.
+Upgrade with `uv tool upgrade gfli` or `pipx upgrade gfli` respectively.

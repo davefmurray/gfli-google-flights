@@ -6,7 +6,7 @@ supported tail-number or per-flight Starlink confirmation feed in this transport
 
 ## Reviewed Sources
 
-Reviewed 2026-09-05. Rules live in `fli/search/starlink.py`; `glfi starlink --json`
+Reviewed 2026-09-05. Rules live in `fli/search/starlink.py`; `gfli starlink --json`
 exposes their exact operator, aircraft, status, source, and date scope.
 
 | Scope | Inference | Airline-owned evidence |
@@ -18,7 +18,7 @@ exposes their exact operator, aircraft, status, source, and date scope.
 | United 777-200/200ER | Possible | [First widebody customer service](https://united.mediaroom.com/2026-06-22-United-Accelerates-Starlink-Wi-Fi-Rollout-with-First-Widebody-Transatlantic-Flight) |
 | United-marketed E170/E175/CRJ550/CRJ700, operated by UA/OO/YX/G7 | Possible | [Most two-cabin regional jets equipped](https://united.mediaroom.com/2026-02-02-United-Spotlights-Starlink-Wi-Fi-in-New-Big-Game-Ad-as-Airline-Completes-Installation-on-300-Regional-Aircraft) |
 
-The status labels are GLFI's interpretation of these sources, not statements from
+The status labels are GFLI's interpretation of these sources, not statements from
 the airline about an individual flight. A completed programme does not exclude
 equipment swaps, leased subfleets, new aircraft, outages, or geographic restrictions.
 An announced future installation target is never treated as a completed rollout.

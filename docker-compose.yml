@@ -1,7 +1,7 @@
 services:
-  glfi-mcp:
+  gfli-mcp:
     build: .
-    image: glfi:local
+    image: gfli:local
     ports:
       - "127.0.0.1:8000:8000"
     environment:

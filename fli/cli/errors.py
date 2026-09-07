@@ -1,7 +1,7 @@
 """CLI error reporting helpers.
 
 Turns ugly tracebacks into a one-line message for the user plus a
-self-contained log file under ~/.glfi/logs/ that captures the full
+self-contained log file under ~/.gfli/logs/ that captures the full
 traceback for debugging.
 """
 
@@ -25,7 +25,7 @@ from fli.search.exceptions import (
     search_error_type,
 )
 
-_LOG_DIR = Path.home() / ".glfi" / "logs"
+_LOG_DIR = Path.home() / ".gfli" / "logs"
 _logger = logging.getLogger("fli")
 
 
@@ -47,7 +47,7 @@ def _write_log(exc: BaseException, *, command: str | None = None) -> Path | None
     # Microsecond precision so rapid-fire errors (e.g. tests, parallel
     # legs) don't collide on the same filename and silently overwrite.
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
-    log_path = _LOG_DIR / f"glfi-error-{timestamp}.log"
+    log_path = _LOG_DIR / f"gfli-error-{timestamp}.log"
 
     lines: list[str] = []
     lines.append(f"timestamp: {datetime.now(timezone.utc).isoformat()}")

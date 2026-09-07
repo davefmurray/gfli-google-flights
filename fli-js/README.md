@@ -1,9 +1,9 @@
-# GLFI TypeScript (Experimental)
+# GFLI TypeScript (Experimental)
 
 Inherited from the [Fli TypeScript library](https://github.com/punitarani/fli).
 
 **Not released.** The Python public search-page transport has not been ported
-here. Offline tests pass, but live search is not supported for GLFI's first
+here. Offline tests pass, but live search is not supported for GFLI's first
 release. The package is marked private to prevent accidental publication.
 The API examples below are inherited reference material, not verified live workflows.
 
@@ -26,7 +26,7 @@ import {
   SearchFlights,
   SeatType,
   SortBy,
-} from "glfi-js";
+} from "gfli-js";
 
 const filters = new FlightSearchFilters({
   passenger_info: { adults: 1, children: 0, infants_in_seat: 0, infants_on_lap: 0 },
@@ -49,7 +49,7 @@ console.log(results);
 ### Date-range search
 
 ```ts
-import { Airport, DateSearchFilters, FlightSegment, SearchDates } from "glfi-js";
+import { Airport, DateSearchFilters, FlightSegment, SearchDates } from "gfli-js";
 
 const filters = new DateSearchFilters({
   passenger_info: { adults: 1, children: 0, infants_in_seat: 0, infants_on_lap: 0 },
@@ -73,7 +73,7 @@ Turn search results into clickable Google Flights links — no extra network
 call, fully deterministic.
 
 ```ts
-import { googleFlightsUrl, SearchFlights } from "glfi-js";
+import { googleFlightsUrl, SearchFlights } from "gfli-js";
 
 const search = new SearchFlights();
 const results = await search.search(filters, { currency: "USD" });
@@ -108,7 +108,7 @@ The TypeScript port uses native `fetch` (Bun's built-in) and replaces
   explicit `proxy` option on `new Client({...})`).
 
 ```ts
-import { Client, SearchFlights } from "glfi-js";
+import { Client, SearchFlights } from "gfli-js";
 
 const search = new SearchFlights(
   new Client({ proxy: "http://user:pass@proxy.example.com:8080" }),

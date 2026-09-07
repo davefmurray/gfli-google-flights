@@ -1,6 +1,6 @@
-# GLFI Pre-Launch Work
+# GFLI Pre-Launch Work
 
-Public source preview at https://github.com/davefmurray/glfi. Registry releases
+Public source preview at https://github.com/davefmurray/gfli. Registry releases
 and public service deployment remain separate, unapproved operations. The local
 batch notes below are historical; their no-push statements describe that stage.
 
@@ -19,7 +19,7 @@ batch notes below are historical; their no-push statements describe that stage.
   rewrite applied. This is a scoped scan, not a comprehensive security guarantee.
 - Push triggers CI only. PyPI publishing remains explicitly dispatched and
   separately gated; no package, container, or public HTTP service is released.
-- Current remote verification: [GitHub CI](https://github.com/davefmurray/glfi/actions/workflows/ci.yml).
+- Current remote verification: [GitHub CI](https://github.com/davefmurray/gfli/actions/workflows/ci.yml).
 - The first remote run passed container execution but exposed a TypeScript test
   cleanup issue: assigning an absent environment variable to `undefined` left
   a literal string on the CI runtime. Tests now delete absent timeout/proxy
@@ -28,8 +28,8 @@ batch notes below are historical; their no-push statements describe that stage.
 
 ## Final Selected Feature Batch
 
-- Saved flight/date presets shared by CLI and MCP: `glfi save NAME -- ...`,
-  `glfi run NAME`, and `glfi presets list|show|delete`. Saving never searches.
+- Saved flight/date presets shared by CLI and MCP: `gfli save NAME -- ...`,
+  `gfli run NAME`, and `gfli presets list|show|delete`. Saving never searches.
   Date overrides revalidate in memory, without changing stored preferences.
   Versioned JSON, atomic writes, explicit replacement, private POSIX permissions,
   and no persisted booking sessions or credentials. No background monitoring.
@@ -44,7 +44,7 @@ batch notes below are historical; their no-push statements describe that stage.
   excluded when timing cannot be established; local timestamp/DST limits are
   documented. Nonstop flights still qualify; overnight flights are not excluded
   merely because overnight connections are excluded.
-- `glfi doctor` checks installation, dependencies/MCP configuration, preset files
+- `gfli doctor` checks installation, dependencies/MCP configuration, preset files
   and Starlink freshness without contacting Google. An invalid timeout no longer
   prevents diagnostics from loading. Provider checking is explicitly opt-in;
   cookie values and captured MCP stderr are not printed.
@@ -66,7 +66,7 @@ batch notes below are historical; their no-push statements describe that stage.
   premium). This preset required no overnight connections, without the JFK or
   duration constraints of the separate test. A connection-constrained round-trip
   date search returned one pair. These are smoke observations, not fare promises.
-- Rebuilt/reinstalled own GLFI wheel. Original `fli` untouched; temporary presets
+- Rebuilt/reinstalled own GFLI wheel. Original `fli` untouched; temporary presets
   removed and test servers stopped. TypeScript/dependencies unchanged; prior
   audits/TypeScript checks were not repeated. Docker and remote release gates
   remain unverified here. Nothing pushed or published.
@@ -74,7 +74,7 @@ batch notes below are historical; their no-push statements describe that stage.
 ## Post-Batch Feature: Starlink Finder
 
 - CLI flights/dates and all three relevant MCP tools now accept `starlink` modes
-  `any`, `likely`, and `possible`. `glfi starlink` exposes the evidence catalog.
+  `any`, `likely`, and `possible`. `gfli starlink` exposes the evidence catalog.
 - Matches use reviewed airline-owned fleet statements and actual operator/aircraft
   fields, not generic Wi-Fi flags or invented probabilities. Initial scopes cover
   Hawaiian, Qatar, and selected United/United Express equipment. Unknown is not no.
@@ -84,7 +84,7 @@ batch notes below are historical; their no-push statements describe that stage.
 - No flight-confirmed mode: tail assignment, swaps, outages and route restrictions
   are not verified. Evidence reviewed 2026-09-05, expires/requires review 2026-12-04.
   Stale catalogs or dates beyond the review horizon fail explicitly when filtering.
-  Google links do not preserve the GLFI-only filter. See STARLINK.md.
+  Google links do not preserve the GFLI-only filter. See STARLINK.md.
 - Verification: 1,018 offline tests passed on Python 3.10/3.11/3.12/3.13, including
   47 new regression tests. Ruff, wheel/sdist builds and Twine passed. Live DOH-LHR
   on 2026-10-15 returned five likely candidates; JAX-IAD returned one possible
@@ -114,7 +114,7 @@ batch notes below are historical; their no-push statements describe that stage.
   preserve exclusions and alliances when splitting long date ranges.
 
 PRs #160, #215, and #103 were merged with history retained. The dependency floor
-and additional integration fixes are GLFI changes, not merges of PRs #193/#194/#210.
+and additional integration fixes are GFLI changes, not merges of PRs #193/#194/#210.
 The earlier baseline already incorporated #230, #231, and #232.
 
 ## Remaining Before A Release Decision
@@ -159,7 +159,7 @@ not automatically part of the first release.
   workers, preventing pool-exhaustion deadlocks. A subprocess regression test
   verifies nested success, error propagation, and worker reuse.
 
-These are GLFI adaptations of proposals #195/#196/#199, not merges of their PR
+These are GFLI adaptations of proposals #195/#196/#199, not merges of their PR
 heads. The upstream return-time sentinel design is retained with attribution in
 NOTICE; duration execution is adapted to the current public-page transport.
 
@@ -217,7 +217,7 @@ require destination decoding and end-to-end verification before integrating Expl
   or changes to global installs are made by this target.
 - **Release gates:** SHA-pinned actions, non-persisted checkout credentials,
   bounded job timeouts, advisory checks, fresh-install checks, and container CI.
-  Publishing remains manual and additionally checks owned repository, GLFI tag,
+  Publishing remains manual and additionally checks owned repository, GFLI tag,
   version/lock agreement, verification jobs, and protected PyPI environment.
   Corrected Dependabot ownership. Environment protection/trusted publishing still
   need account-side setup; no remote workflows have run yet.
@@ -237,7 +237,7 @@ MCP check passed on 3.12. Live JAX-JFK for 2026-10-15 with two adults and one ch
 returned ten flights using the updated development lock. Docker is unavailable;
 container/remote CI checks remain pending, not marked passed.
 The rebuilt installed wheel also returned ten flights, passed stdio/HTTP checks,
-and had no known advisories in its 81 registry dependencies (the unpublished GLFI
+and had no known advisories in its 81 registry dependencies (the unpublished GFLI
 package itself is not in the advisory database). Original `fli` is untouched.
 No servers were left running, and nothing was pushed or published.
 

@@ -101,8 +101,8 @@ def multi(
     Each leg specifies an origin, destination, and date. At least two legs are required.
 
     Example:
-        glfi multi --leg SEA,HKG,2026-12-26 --leg PEK,SEA,2027-01-02
-        glfi multi -l SEA,NRT,2026-12-26 -l NRT,HKG,2026-12-30 -l HKG,SEA,2027-01-05 -c BUSINESS
+        gfli multi --leg SEA,HKG,2026-12-26 --leg PEK,SEA,2027-01-02
+        gfli multi -l SEA,NRT,2026-12-26 -l NRT,HKG,2026-12-30 -l HKG,SEA,2027-01-05 -c BUSINESS
 
     """
     try:

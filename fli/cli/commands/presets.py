@@ -26,7 +26,7 @@ def save(
         typer.Argument(help="Search arguments after --; optionally begin with dates or flights."),
     ],
 ):
-    """Save a search: glfi save work -- JAX IAD 2026-10-15 --starlink possible."""
+    """Save a search: gfli save work -- JAX IAD 2026-10-15 --starlink possible."""
     from typer.main import get_command
 
     from fli.cli.main import app

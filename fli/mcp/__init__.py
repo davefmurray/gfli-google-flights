@@ -1,6 +1,6 @@
 """MCP module for the fli package.
 
-The MCP server depends on optional extras (``glfi[mcp]``).  When those
+The MCP server depends on optional extras (``gfli[mcp]``).  When those
 packages are not installed the public names are simply unavailable and
 importing this package will **not** raise an error.
 """

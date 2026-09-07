@@ -53,7 +53,7 @@ async def test_connection_tools_schema_and_wiring(tool, monkeypatch):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("kind", ["flights", "dates"])
 async def test_save_then_run_cross_surface(kind, monkeypatch, tmp_path):
-    monkeypatch.setenv("GLFI_PRESET_DIR", str(tmp_path))
+    monkeypatch.setenv("GFLI_PRESET_DIR", str(tmp_path))
     captured = []
     monkeypatch.setattr(
         "fli.search.SearchFlights.search",
@@ -98,7 +98,7 @@ async def test_save_then_run_cross_surface(kind, monkeypatch, tmp_path):
 
 @pytest.mark.asyncio
 async def test_mcp_runs_cli_created_preset(monkeypatch, tmp_path):
-    monkeypatch.setenv("GLFI_PRESET_DIR", str(tmp_path))
+    monkeypatch.setenv("GFLI_PRESET_DIR", str(tmp_path))
     save_preset("cli-work", query("flights"))
     captured = []
     monkeypatch.setattr(
@@ -113,7 +113,7 @@ async def test_mcp_runs_cli_created_preset(monkeypatch, tmp_path):
 
 @pytest.mark.asyncio
 async def test_empty_preset_name_cannot_trigger_search(monkeypatch, tmp_path):
-    monkeypatch.setenv("GLFI_PRESET_DIR", str(tmp_path))
+    monkeypatch.setenv("GFLI_PRESET_DIR", str(tmp_path))
     monkeypatch.setattr(
         "fli.search.SearchFlights.search", lambda *args, **kwargs: pytest.fail("Network")
     )

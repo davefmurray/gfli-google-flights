@@ -17,8 +17,8 @@ from pathlib import Path
 import fli
 from fli.models import Airport, Airline
 assert 'site-packages' in str(Path(fli.__file__).resolve())
-assert importlib.metadata.version('glfi')
-files = importlib.metadata.distribution('glfi').files
+assert importlib.metadata.version('gfli')
+files = importlib.metadata.distribution('gfli').files
 assert any(str(p).endswith('/licenses/LICENSE.txt') for p in files)
 assert any(str(p).endswith('/licenses/NOTICE') for p in files)
 assert Airport.TRI.name == 'TRI'
@@ -41,7 +41,7 @@ expected = {'search_flights', 'search_dates', 'find_airports', 'get_booking_opti
             'save_search_preset', 'run_search_preset', 'manage_search_presets'}
 
 async def check():
-    command = str(Path(sysconfig.get_path('scripts')) / 'glfi-mcp')
+    command = str(Path(sysconfig.get_path('scripts')) / 'gfli-mcp')
     async with Client(StdioTransport(command=command, args=[]), timeout=30) as client:
         assert {t.name for t in await client.list_tools()} == expected
         result = await client.call_tool('find_airports', {'query': 'Jacksonville'})
@@ -61,7 +61,7 @@ async def check():
         async with httpx.AsyncClient() as http:
             response = await http.get(base + '/health')
             assert response.status_code == 200
-            assert response.json() == {'status': 'ok', 'service': 'glfi'}
+            assert response.json() == {'status': 'ok', 'service': 'gfli'}
         async with Client(base + '/mcp/', timeout=30) as client:
             assert {t.name for t in await client.list_tools()} == expected
     finally:
@@ -76,11 +76,11 @@ asyncio.run(check())
 def verify(artifact: Path, *, python: str, mcp: bool) -> None:
     """Install and exercise one artifact without inheriting the source import path."""
     artifact = artifact.resolve(strict=True)
-    with tempfile.TemporaryDirectory(prefix="glfi-install-") as temporary:
+    with tempfile.TemporaryDirectory(prefix="gfli-install-") as temporary:
         root = Path(temporary)
         env = os.environ.copy()
         for key in list(env):
-            if key.startswith("GLFI_") or key in ("PYTHONPATH", "PYTHONHOME", "VIRTUAL_ENV"):
+            if key.startswith("GFLI_") or key in ("PYTHONPATH", "PYTHONHOME", "VIRTUAL_ENV"):
                 env.pop(key)
         env["HOME"] = str(root)
         env["TERM"] = "xterm-256color"
@@ -99,12 +99,12 @@ def verify(artifact: Path, *, python: str, mcp: bool) -> None:
         run(["uv", "venv", "--python", python, str(venv)])
         binaries = venv / ("Scripts" if os.name == "nt" else "bin")
         executable = str(binaries / ("python.exe" if os.name == "nt" else "python"))
-        requirement = f"glfi{'[mcp]' if mcp else ''} @ {artifact.as_uri()}"
+        requirement = f"gfli{'[mcp]' if mcp else ''} @ {artifact.as_uri()}"
         run(["uv", "pip", "install", "--python", executable, requirement])
         run(["uv", "pip", "check", "--python", executable])
         run([executable, "-c", CORE_CHECK])
-        cli = str(binaries / "glfi")
-        assert "glfi" in run([cli, "--version"])
+        cli = str(binaries / "gfli")
+        assert "gfli" in run([cli, "--version"])
         run([cli, "--help"])
         assert "JAX" in run([cli, "airports", "Jacksonville"])
         diagnostics = json.loads(run([cli, "doctor", "--json"]))
@@ -135,7 +135,7 @@ def verify(artifact: Path, *, python: str, mcp: bool) -> None:
         if mcp:
             run([executable, "-c", MCP_CHECK])
         else:
-            for entry in ("glfi-mcp", "glfi-mcp-http"):
+            for entry in ("gfli-mcp", "gfli-mcp-http"):
                 output = run([str(binaries / entry)], expected=1)
                 assert "MCP dependencies are not installed" in output
         print(f"PASS: {artifact.name}, {'MCP + CLI' if mcp else 'core CLI'}, {python}")

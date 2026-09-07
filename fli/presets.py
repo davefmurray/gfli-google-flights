@@ -31,11 +31,11 @@ class Preset(BaseModel):
 
 def preset_directory() -> Path:
     """Resolve the shared preset directory without creating it."""
-    override = os.environ.get("GLFI_PRESET_DIR")
+    override = os.environ.get("GFLI_PRESET_DIR")
     if override:
         return Path(override).expanduser()
     return (
-        Path(os.environ.get("XDG_CONFIG_HOME", str(Path.home() / ".config"))) / "glfi" / "presets"
+        Path(os.environ.get("XDG_CONFIG_HOME", str(Path.home() / ".config"))) / "gfli" / "presets"
     )
 
 

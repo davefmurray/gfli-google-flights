@@ -26,23 +26,23 @@ def diagnose(*, check_provider=False):
         sys.version.split()[0],
     )
     try:
-        add("distribution", "ok", f"glfi {importlib.metadata.version('glfi')}")
+        add("distribution", "ok", f"gfli {importlib.metadata.version('gfli')}")
     except importlib.metadata.PackageNotFoundError:
-        add("distribution", "error", "GLFI distribution metadata missing; reinstall GLFI.")
+        add("distribution", "error", "GFLI distribution metadata missing; reinstall GFLI.")
     try:
-        timeout = float(os.environ.get("GLFI_TIMEOUT", "60"))
+        timeout = float(os.environ.get("GFLI_TIMEOUT", "60"))
         if not math.isfinite(timeout) or timeout <= 0:
             raise ValueError
         add("search_configuration", "ok", "Timeout is valid; cookie value is not displayed.")
         valid_config = True
     except ValueError:
-        add("search_configuration", "error", "GLFI_TIMEOUT must be a finite positive number.")
+        add("search_configuration", "error", "GFLI_TIMEOUT must be a finite positive number.")
         valid_config = False
     for package in ("curl_cffi", "typer", "pydantic"):
         add(
             package,
             "ok" if importlib.util.find_spec(package) else "error",
-            "Installed" if importlib.util.find_spec(package) else "Missing; reinstall GLFI.",
+            "Installed" if importlib.util.find_spec(package) else "Missing; reinstall GFLI.",
         )
     if importlib.util.find_spec("fastmcp") and importlib.util.find_spec("mcp"):
         try:
@@ -56,8 +56,8 @@ def diagnose(*, check_provider=False):
                 "ok" if probe.returncode == 0 else "error",
                 "Dependencies and configuration import successfully; no server started."
                 if probe.returncode == 0
-                else "MCP import/configuration failed; check GLFI_MCP_ settings "
-                "and reinstall glfi[mcp].",
+                else "MCP import/configuration failed; check GFLI_MCP_ settings "
+                "and reinstall gfli[mcp].",
             )
         except (OSError, subprocess.TimeoutExpired):
             add("mcp", "error", "MCP import check could not finish within 20 seconds.")
@@ -65,7 +65,7 @@ def diagnose(*, check_provider=False):
         add(
             "mcp",
             "warning",
-            "Optional MCP dependencies missing; install glfi[mcp] for MCP commands.",
+            "Optional MCP dependencies missing; install gfli[mcp] for MCP commands.",
         )
     if valid_config:
         try:
@@ -80,11 +80,11 @@ def diagnose(*, check_provider=False):
             add(
                 "starlink_evidence",
                 "warning" if stale or not RULES else "ok",
-                f"{len(stale)} stale of {len(RULES)} rules; inspect glfi starlink "
+                f"{len(stale)} stale of {len(RULES)} rules; inspect gfli starlink "
                 "for sources and review dates.",
             )
         except Exception:
-            add("starlink_evidence", "error", "Unable to load evidence catalog; reinstall GLFI.")
+            add("starlink_evidence", "error", "Unable to load evidence catalog; reinstall GFLI.")
     else:
         add("starlink_evidence", "warning", "Not loaded until search configuration is fixed.")
     from fli.presets import list_presets, load_preset, preset_directory
@@ -102,7 +102,7 @@ def diagnose(*, check_provider=False):
         add(
             "presets",
             "error",
-            "Preset file is unreadable or malformed; inspect glfi presets show NAME.",
+            "Preset file is unreadable or malformed; inspect gfli presets show NAME.",
         )
     if check_provider and valid_config:
         try:

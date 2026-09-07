@@ -1,4 +1,4 @@
-"""Verify GLFI identity, isolated configuration, and installed stdio transport."""
+"""Verify GFLI identity, isolated configuration, and installed stdio transport."""
 
 import sysconfig
 from pathlib import Path
@@ -12,12 +12,12 @@ from fli.mcp.server import FlightSearchConfig, mcp, run_http
 
 
 def test_identity():
-    assert mcp.name == "GLFI"
+    assert mcp.name == "GFLI"
 
 
-def test_config_uses_glfi_namespace(monkeypatch):
+def test_config_uses_gfli_namespace(monkeypatch):
     monkeypatch.setenv("FLI_MCP_DEFAULT_CURRENCY", "GBP")
-    monkeypatch.setenv("GLFI_MCP_DEFAULT_CURRENCY", "EUR")
+    monkeypatch.setenv("GFLI_MCP_DEFAULT_CURRENCY", "EUR")
     assert FlightSearchConfig().default_currency == "EUR"
 
 
@@ -31,7 +31,7 @@ def test_http_defaults_to_loopback(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_installed_stdio_server():
-    command = str(Path(sysconfig.get_path("scripts")) / "glfi-mcp")
+    command = str(Path(sysconfig.get_path("scripts")) / "gfli-mcp")
     async with Client(StdioTransport(command=command, args=[]), timeout=20) as client:
         tools = await client.list_tools()
         assert {tool.name for tool in tools} == {
@@ -44,7 +44,7 @@ async def test_installed_stdio_server():
             "manage_search_presets",
         }
         resources = await client.list_resources()
-        assert "resource://glfi-mcp/configuration" in {str(r.uri) for r in resources}
+        assert "resource://gfli-mcp/configuration" in {str(r.uri) for r in resources}
         result = await client.call_tool("find_airports", {"query": "Jacksonville"})
         assert not result.is_error
         assert "JAX" in str(result)

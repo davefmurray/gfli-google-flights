@@ -1,4 +1,4 @@
-# GLFI Future Features
+# GFLI Future Features
 
 Unimplemented ideas, not release promises or additional pre-push requirements.
 The selected pre-push additions are saved presets, Starlink fare comparisons,
@@ -46,7 +46,7 @@ when a bounded diagnostic proves usable destination results, not merely HTTP
 
 ## Distribution And Parity
 
-- Homebrew formula after an owned, published GLFI artifact exists.
+- Homebrew formula after an owned, published GFLI artifact exists.
 - ICAO input with authoritative airport mappings and disambiguation tests.
 - TypeScript search transport parity before enabling npm publication.
 - Authenticated hosted MCP with authorization, request limits and per-user preset

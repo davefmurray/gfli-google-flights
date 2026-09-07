@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""CLI entry point for GLFI."""
+"""CLI entry point for GFLI."""
 
 import sys
 from importlib.metadata import version
@@ -16,7 +16,7 @@ from fli.cli.commands.starlink import starlink
 from fli.cli.doctor import doctor
 
 app = typer.Typer(
-    help="GLFI: flight search for your terminal and AI assistants.",
+    help="GFLI: flight search for your terminal and AI assistants.",
     add_completion=True,
 )
 
@@ -35,7 +35,7 @@ app.add_typer(presets_app, name="presets")
 def _show_version(value: bool) -> None:
     """Print the installed distribution version and exit."""
     if value:
-        typer.echo(f"glfi {version('glfi')}")
+        typer.echo(f"gfli {version('gfli')}")
         raise typer.Exit()
 
 
