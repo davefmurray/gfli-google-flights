@@ -1,8 +1,8 @@
-# GFLI
+# GFLI — Google Flights Search CLI & MCP
 
 **Find a better flight. Keep your standards.**
 
-[![CI](https://github.com/davefmurray/gfli/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/davefmurray/gfli/actions/workflows/ci.yml)
+[![CI](https://github.com/davefmurray/gfli-google-flights/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/davefmurray/gfli-google-flights/actions/workflows/ci.yml)
 [![Python 3.10-3.13](https://img.shields.io/badge/python-3.10%20%E2%80%93%203.13-3776AB)](pyproject.toml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-16803C)](LICENSE.txt)
 
@@ -51,7 +51,7 @@ isolated tool environment:
 
 ```sh
 uv tool install --python 3.11 \
-  'gfli[mcp] @ git+https://github.com/davefmurray/gfli.git'
+  'gfli[mcp] @ git+https://github.com/davefmurray/gfli-google-flights.git'
 
 gfli --version
 gfli doctor
@@ -64,8 +64,8 @@ run `uv tool update-shell` and restart it.
 Prefer a checkout?
 
 ```sh
-git clone https://github.com/davefmurray/gfli.git
-cd gfli
+git clone https://github.com/davefmurray/gfli-google-flights.git
+cd gfli-google-flights
 uv tool install --python 3.11 '.[mcp]'
 ```
 
@@ -282,7 +282,7 @@ belong to the server's OS user, not an authenticated remote caller.
 
 `docker compose up --build` provides a non-root, read-only container with a
 loopback port. See the [container verification gate](RELEASING.md#container-gate)
-and [CI results](https://github.com/davefmurray/gfli/actions/workflows/ci.yml).
+and [CI results](https://github.com/davefmurray/gfli-google-flights/actions/workflows/ci.yml).
 Container registry publication is not enabled.
 
 </details>
@@ -333,8 +333,8 @@ under `~/.gfli/logs` include arguments and tracebacks: review them before sharin
 ## Development
 
 ```sh
-git clone https://github.com/davefmurray/gfli.git
-cd gfli
+git clone https://github.com/davefmurray/gfli-google-flights.git
+cd gfli-google-flights
 uv sync --python 3.11 --all-extras
 make lint
 make test-offline
@@ -351,7 +351,7 @@ The distribution and commands are `gfli`; Python imports remain `fli` for
 upstream compatibility. Do not install GFLI and the original `flights` package
 in the same environment. `uv tool` keeps them isolated.
 
-Found a bug? [Open an issue](https://github.com/davefmurray/gfli/issues) with
+Found a bug? [Open an issue](https://github.com/davefmurray/gfli-google-flights/issues) with
 your version, redacted command, and diagnostic output. Keep travel details and
 credentials out of public reports. Contributions should include regression tests;
 provider failures must never be presented as successful empty searches.

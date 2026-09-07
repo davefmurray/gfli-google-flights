@@ -1,9 +1,9 @@
-# GFLI Reference Documentation
+# GFLI — Google Flights Search Reference
 
 **Migration in progress.** The material below was inherited from Fli and may
 refer to upstream packages or currently unsupported capabilities. For GFLI
 installation, MCP configuration, and live-search limitations, use the
-[GFLI README](https://github.com/davefmurray/gfli#readme). In particular,
+[GFLI README](https://github.com/davefmurray/gfli-google-flights#readme). In particular,
 multi-city is unavailable, booking-price RPCs may be rejected, and the
 TypeScript search transport has not been repaired. No documentation site
 has been deployed for GFLI yet.

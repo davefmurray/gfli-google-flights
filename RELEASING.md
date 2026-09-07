@@ -11,7 +11,7 @@ explicit package release decision and require successful remote CI/container
 verification before releasing artifacts.
 
 1. Confirm `gfli` can be registered on PyPI. A metadata 404 is not a reservation.
-2. Configure a PyPI trusted publisher for `davefmurray/gfli`, workflow `publish.yml`,
+2. Configure a PyPI trusted publisher for `davefmurray/gfli-google-flights`, workflow `publish.yml`,
    environment `pypi`. Protect that GitHub environment with required approval.
 3. Update `pyproject.toml`, run `uv lock`, and commit the matching version and lockfile.
 4. Run `make lint`, `make test-offline`, `make audit`, and a small live search from
@@ -26,7 +26,7 @@ verification before releasing artifacts.
 
 The workflow is manual-only with `publish=false` by default. Publishing additionally
 requires the exact `gfli-vVERSION` tag matching project and lockfile, the owned
-`davefmurray/gfli` repository, successful verification jobs, and the `pypi`
+`davefmurray/gfli-google-flights` repository, successful verification jobs, and the `pypi`
 environment. Configure required reviewers and restrict that environment to GFLI
 release tags in GitHub; YAML cannot configure those account-side protections.
 Third-party actions are commit-pinned and checkout credentials are not persisted.

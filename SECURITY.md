@@ -48,5 +48,5 @@ of `uv.lock`; `make verify-install` separately exercises newly resolved installs
 
 Do not put secrets or exploit-sensitive data in public issues. GitHub private
 vulnerability reporting is enabled for this repository: [report a vulnerability
-privately](https://github.com/davefmurray/gfli/security/advisories/new).
+privately](https://github.com/davefmurray/gfli-google-flights/security/advisories/new).
 No response-time commitment is established yet.

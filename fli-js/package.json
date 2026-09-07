@@ -2,7 +2,7 @@
   "name": "gfli-js",
   "version": "0.1.0",
   "private": true,
-  "description": "Experimental GFLI TypeScript client. Live search transport is pending repair.",
+  "description": "Experimental GFLI Google Flights TypeScript client. Live search transport is pending repair.",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -63,12 +63,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/davefmurray/gfli.git",
+    "url": "git+https://github.com/davefmurray/gfli-google-flights.git",
     "directory": "fli-js"
   },
-  "homepage": "https://github.com/davefmurray/gfli/tree/main/fli-js#readme",
+  "homepage": "https://github.com/davefmurray/gfli-google-flights/tree/main/fli-js#readme",
   "bugs": {
-    "url": "https://github.com/davefmurray/gfli/issues"
+    "url": "https://github.com/davefmurray/gfli-google-flights/issues"
   },
   "publishConfig": {
     "access": "public",

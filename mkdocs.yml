@@ -1,7 +1,7 @@
-site_name: GFLI Reference Documentation
-site_url: https://davefmurray.github.io/gfli/
-site_description: GFLI flight search reference, including inherited Fli API documentation
-repo_url: https://github.com/davefmurray/gfli
+site_name: GFLI — Google Flights Search CLI & MCP
+site_url: https://davefmurray.github.io/gfli-google-flights/
+site_description: GFLI Google Flights search CLI and MCP reference, including inherited Fli API documentation
+repo_url: https://github.com/davefmurray/gfli-google-flights
 site_author: Dave Murray and Fli contributors
 copyright: Copyright &copy; 2025 Punit Arani. GFLI changes &copy; 2026 Dave Murray.
 

@@ -52,7 +52,7 @@ def test_publication_is_manual_and_scoped():
     assert workflow["on"]["workflow_dispatch"]["inputs"]["publish"]["default"] == "false"
     job = workflow["jobs"]["publish"]
     assert "inputs.publish" in job["if"]
-    assert "davefmurray/gfli" in job["if"]
+    assert "davefmurray/gfli-google-flights" in job["if"]
     assert job["environment"]["name"] == "pypi"
     assert workflow["permissions"] == {"contents": "read"}
 

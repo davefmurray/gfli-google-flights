@@ -1,6 +1,6 @@
 # GFLI Pre-Launch Work
 
-Public source preview at https://github.com/davefmurray/gfli. Registry releases
+Public source preview at https://github.com/davefmurray/gfli-google-flights. Registry releases
 and public service deployment remain separate, unapproved operations. The local
 batch notes below are historical; their no-push statements describe that stage.
 
@@ -19,7 +19,7 @@ batch notes below are historical; their no-push statements describe that stage.
   rewrite applied. This is a scoped scan, not a comprehensive security guarantee.
 - Push triggers CI only. PyPI publishing remains explicitly dispatched and
   separately gated; no package, container, or public HTTP service is released.
-- Current remote verification: [GitHub CI](https://github.com/davefmurray/gfli/actions/workflows/ci.yml).
+- Current remote verification: [GitHub CI](https://github.com/davefmurray/gfli-google-flights/actions/workflows/ci.yml).
 - The first remote run passed container execution but exposed a TypeScript test
   cleanup issue: assigning an absent environment variable to `undefined` left
   a literal string on the CI runtime. Tests now delete absent timeout/proxy
