@@ -141,7 +141,10 @@ def dates(
     return_departure_window: Annotated[
         str | None,
         typer.Option(
-            "--return-time", "-T", help="Return departure hours (e.g., 16-23); requires --round"
+            "--return-time",
+            "-T",
+            help="Return departure hours (e.g., 16-23); requires --round. "
+            "--time does not apply to the return.",
         ),
     ] = None,
     passengers: Annotated[
@@ -442,7 +445,7 @@ def dates(
                 latest_departure=return_departure_window[1],
             )
             if return_departure_window
-            else False
+            else None
         )
         segments, trip_type = build_date_search_segments(
             origin=origin_airport,

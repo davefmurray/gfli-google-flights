@@ -189,8 +189,8 @@ gfli dates DOH LHR \
 
 Stay ranges require both `--min-duration` and `--max-duration`; do not combine
 them with fixed `--duration`. Round trips default to a three-day stay when neither
-is supplied. `--return-time` overrides the outbound time preference on the return;
-otherwise the return inherits `--time`.
+is supplied. `--time` filters only the outbound; use `--return-time` to filter the
+return.
 
 **Start with a short window.** Date scans make multiple requests. Return-time,
 Starlink, and connection constraints require expanding actual return candidates;

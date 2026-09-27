@@ -37,6 +37,25 @@ def test_return_time_states(builder, mode):
     )
 
 
+def test_cleared_return_time_is_allowed_one_way():
+    date = (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d")
+    segments, _ = build_flight_segments(
+        Airport.SFO, Airport.BOS, date, return_time_restrictions=None
+    )
+    assert len(segments) == 1
+    segments, _ = build_date_search_segments(
+        Airport.SFO, Airport.BOS, date, return_time_restrictions=None
+    )
+    assert len(segments) == 1
+    with pytest.raises(ValueError):
+        build_flight_segments(
+            Airport.SFO,
+            Airport.BOS,
+            date,
+            return_time_restrictions=TimeRestrictions(earliest_departure=5),
+        )
+
+
 @pytest.mark.parametrize(
     "args",
     [

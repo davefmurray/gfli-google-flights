@@ -80,3 +80,34 @@ async def test_invalid_date_controls_are_clear_errors(extra, monkeypatch):
         )
     assert result.data["success"] is False
     assert result.data["error"]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("tool", ["search_flights", "search_dates", "get_booking_options"])
+async def test_departure_window_does_not_filter_return(tool, monkeypatch):
+    captured = []
+
+    def search(self, filters, **kwargs):
+        captured.append(filters)
+        return []
+
+    monkeypatch.setattr("fli.mcp.server.SearchFlights.search", search)
+    monkeypatch.setattr("fli.mcp.server.SearchDates.search", search)
+    day = datetime.now() + timedelta(days=30)
+    args = {"origin": "SFO", "destination": "BOS", "departure_window": "22-23"}
+    if tool == "search_dates":
+        args.update(
+            start_date=day.strftime("%Y-%m-%d"),
+            end_date=day.strftime("%Y-%m-%d"),
+            is_round_trip=True,
+        )
+    else:
+        args.update(
+            departure_date=day.strftime("%Y-%m-%d"),
+            return_date=(day + timedelta(days=4)).strftime("%Y-%m-%d"),
+        )
+    async with Client(mcp) as client:
+        await client.call_tool(tool, args)
+    assert len(captured) == 1
+    assert captured[0].flight_segments[0].time_restrictions.earliest_departure == 22
+    assert captured[0].flight_segments[1].time_restrictions is None
