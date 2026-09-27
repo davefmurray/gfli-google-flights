@@ -128,3 +128,24 @@ def test_invalid_flights_controls_never_search(args, mock_search_flights):
     result = CliRunner().invoke(app, ["flights", *args[:2], day, *args[2:], "--format", "json"])
     assert result.exit_code != 0
     mock_search_flights.search.assert_not_called()
+
+
+@pytest.mark.parametrize("command", ["flights", "dates"])
+def test_outbound_time_does_not_filter_return(command, mock_search_flights, mock_search_dates):
+    day = datetime.now() + timedelta(days=30)
+    start = day.strftime("%Y-%m-%d")
+    if command == "flights":
+        mock_search_flights.search.return_value = []
+        args = [start, "--return", (day + timedelta(days=4)).strftime("%Y-%m-%d")]
+        mock = mock_search_flights
+    else:
+        mock_search_dates.search.return_value = []
+        args = ["--from", start, "--to", start, "--round"]
+        mock = mock_search_dates
+    result = CliRunner().invoke(
+        app, [command, "SFO", "BOS", *args, "--time", "22-23", "--format", "json"]
+    )
+    assert result.exit_code == 0, result.output
+    filters = mock.search.call_args.args[0]
+    assert filters.flight_segments[0].time_restrictions.earliest_departure == 22
+    assert filters.flight_segments[1].time_restrictions is None

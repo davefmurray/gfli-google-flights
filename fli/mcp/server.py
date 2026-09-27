@@ -120,7 +120,9 @@ class FlightSearchParams(BaseModel):
         None, description="Return date in YYYY-MM-DD format (omit for one-way)"
     )
     return_departure_window: str | None = Field(
-        None, description="Return departure hours; requires return_date"
+        None,
+        description="Return departure hours; requires return_date. "
+        "departure_window does not apply to the return.",
     )
     departure_window: str | None = Field(
         None, description="Preferred departure time window in 'HH-HH' 24h format (e.g., '6-20')"
@@ -220,7 +222,9 @@ class DateSearchParams(BaseModel):
     min_duration: int | None = Field(None, ge=1, le=366)
     max_duration: int | None = Field(None, ge=1, le=366)
     return_departure_window: str | None = Field(
-        None, description="Return departure hours; requires a round trip"
+        None,
+        description="Return departure hours; requires a round trip. "
+        "departure_window does not apply to the return.",
     )
     is_round_trip: bool = Field(False, description="Search for round-trip flights")
     airlines: list[str] | None = Field(
@@ -616,11 +620,7 @@ def _build_flight_filters(
         departure_date=params.departure_date,
         return_date=params.return_date,
         time_restrictions=time_restrictions,
-        return_time_restrictions=(
-            build_time_restrictions(params.return_departure_window)
-            if params.return_departure_window is not None
-            else False
-        ),
+        return_time_restrictions=build_time_restrictions(params.return_departure_window),
     )
 
     # Parse new filters
@@ -904,11 +904,7 @@ def _execute_date_search(
             trip_duration=durations[0],
             is_round_trip=params.is_round_trip,
             time_restrictions=time_restrictions,
-            return_time_restrictions=(
-                build_time_restrictions(params.return_departure_window)
-                if params.return_departure_window is not None
-                else False
-            ),
+            return_time_restrictions=build_time_restrictions(params.return_departure_window),
         )
 
         layover_restrictions = None
@@ -1061,7 +1057,11 @@ def search_flights(
         Field(description="Departure time window in 'HH-HH' 24h format (e.g., '6-20')"),
     ] = None,
     return_departure_window: Annotated[
-        str | None, Field(description="Return departure hours (HH-HH); requires return_date")
+        str | None,
+        Field(
+            description="Return departure hours (HH-HH); requires return_date. "
+            "departure_window does not apply to the return."
+        ),
     ] = None,
     starlink: Annotated[
         Literal["any", "likely", "possible"],
@@ -1269,7 +1269,11 @@ def search_dates(
         Field(description="Maximum stay; requires min_duration and is_round_trip", ge=1, le=366),
     ] = None,
     return_departure_window: Annotated[
-        str | None, Field(description="Return departure hours (HH-HH); requires is_round_trip")
+        str | None,
+        Field(
+            description="Return departure hours (HH-HH); requires is_round_trip. "
+            "departure_window does not apply to the return."
+        ),
     ] = None,
     starlink: Annotated[
         Literal["any", "likely", "possible"],
@@ -1479,7 +1483,11 @@ def get_booking_options(
         Field(description="Departure time window in 'HH-HH' 24h format (e.g., '6-20')"),
     ] = None,
     return_departure_window: Annotated[
-        str | None, Field(description="Return departure hours (HH-HH); requires return_date")
+        str | None,
+        Field(
+            description="Return departure hours (HH-HH); requires return_date. "
+            "departure_window does not apply to the return."
+        ),
     ] = None,
     sort_by: Annotated[
         str,

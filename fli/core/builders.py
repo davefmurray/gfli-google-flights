@@ -116,7 +116,7 @@ def build_flight_segments(
         Tuple of (list of FlightSegment objects, TripType)
 
     """
-    if return_time_restrictions is not False and not return_date:
+    if isinstance(return_time_restrictions, TimeRestrictions) and not return_date:
         raise ValueError("Return time restrictions require a return date")
     departure_date = normalize_date(departure_date)
 
@@ -212,7 +212,7 @@ def build_date_search_segments(
         Tuple of (list of FlightSegment objects, TripType)
 
     """
-    if return_time_restrictions is not False and not is_round_trip:
+    if isinstance(return_time_restrictions, TimeRestrictions) and not is_round_trip:
         raise ValueError("Return time restrictions require a round trip")
     start_date = normalize_date(start_date)
 

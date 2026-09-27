@@ -157,7 +157,7 @@ def _search_flights_core(
                 latest_departure=return_departure_window[1],
             )
             if return_departure_window
-            else False
+            else None
         )
         segments, trip_type = build_flight_segments(
             origin=origin_airport,
@@ -416,7 +416,10 @@ def flights(
     return_departure_window: Annotated[
         str | None,
         typer.Option(
-            "--return-time", "-T", help="Return departure hours (e.g., 16-23); requires --return"
+            "--return-time",
+            "-T",
+            help="Return departure hours (e.g., 16-23); requires --return. "
+            "--time does not apply to the return.",
         ),
     ] = None,
     passengers: Annotated[
